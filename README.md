@@ -1,13 +1,13 @@
-﻿# hackios-thyme 鈥?HackiOS on the Xiaomi Mi 10S (thyme / SM8250 "kona")
+# hackios-thyme — HackiOS on the Xiaomi Mi 10S (thyme / SM8250 "kona")
 
-[涓枃璇存槑](#涓枃璇存槑) 路 [Status](#status) 路 [Architecture](#architecture) 路 [Repository layout](#repository-layout) 路 [Legal](#legal-and-attribution)
+[中文说明](#中文说明) · [Status](#status) · [Architecture](#architecture) · [Repository layout](#repository-layout) · [Legal](#legal-and-attribution)
 
-A port of [HackiOS](https://github.com/DBC1349/hackios-mi10ultra) 鈥?unmodified iOS 16.5 userland
-(launchd 鈫?backboardd 鈫?SpringBoard) on top of a self-built XNU 鈥?to a **Xiaomi Mi 10S**
+A port of [HackiOS](https://github.com/DBC1349/hackios-mi10ultra) — unmodified iOS 16.5 userland
+(launchd → backboardd → SpringBoard) on top of a self-built XNU — to a **Xiaomi Mi 10S**
 (codename *thyme*, Qualcomm SM8250 "kona", Adreno 650, UFS 3.1).
 
 This repository is the **port's working record**: how the phone was brought up, the scripts that
-build and deploy it, and 鈥?most importantly 鈥?an honest list of what works and what does not yet.
+build and deploy it, and — most importantly — an honest list of what works and what does not yet.
 
 > iOS itself is **not** in this repository. The system image has to be built by whoever runs it,
 > from Apple's own IPSW, on their own hardware (see [Legal](#legal-and-attribution)). The same
@@ -16,41 +16,48 @@ build and deploy it, and 鈥?most importantly 鈥?an honest list of what works a
 
 ---
 
-## 涓枃璇存槑
+## 中文说明
 
-杩欐槸涓€涓妸 **鏈敼鍔ㄧ殑 iOS 16.5 鐢ㄦ埛鎬?*锛坙aunchd 鈫?backboardd 鈫?SpringBoard锛夌Щ妞嶅埌
-**灏忕背 10S锛坱hyme锛岄獊榫?865 / SM8250 "kona"锛孉dreno 650锛孶FS 3.1锛?* 鐨勯」鐩紝鍐呮牳涓鸿嚜琛屾瀯寤虹殑 XNU銆?
-鏈粨搴撴槸**绉绘杩囩▼鐨勫伐浣滆褰?*锛氬惎鍔ㄩ摼銆佹瀯寤?閮ㄧ讲鑴氭湰锛屼互鍙婃渶閲嶈鐨勨€斺€?*宸插疄鐜板拰鏈疄鐜扮洰鏍囩殑娓呭崟**銆?
-> 浠撳簱涓?*涓嶅寘鍚?* iOS 绯荤粺鏈綋銆傜郴缁熼暅鍍忛渶瑕佷娇鐢ㄨ€呰嚜宸辩敤鑻规灉瀹樻柟 IPSW 鍦ㄨ嚜宸辩殑璁惧涓婄敓鎴?>锛堣[娉曞緥涓庤嚧璋(#legal-and-attribution)锛夈€傛墍鏈夊巶鍟嗗浐浠讹紙GPU/WiFi/闊抽绛?blob锛夐兘浠庢墜鏈?> 鑷繁鐨勫畨鍗撳垎鍖烘彁鍙栵紝鍚屾牱涓嶉殢浠撳簱鍒嗗彂銆?
+这是一个把 **未改动的 iOS 16.5 用户态**（launchd → backboardd → SpringBoard）移植到
+**小米 10S（thyme，骁龙 865 / SM8250 "kona"，Adreno 650，UFS 3.1）** 的项目，内核为自行构建的 XNU。
+
+本仓库是**移植过程的工作记录**：启动链、构建/部署脚本，以及最重要的——**已实现和未实现目标的清单**。
+
+> 仓库中**不包含** iOS 系统本体。系统镜像需要使用者自己用苹果官方 IPSW 在自己的设备上生成
+>（见[法律与致谢](#legal-and-attribution)）。所有厂商固件（GPU/WiFi/音频等 blob）都从手机
+> 自己的安卓分区提取，同样不随仓库分发。
+
 ---
 
 ## Status
 
-### Working / 宸插疄鐜?
-| Item | 椤圭洰 | Notes / 澶囨敞 |
-|---|---|---|
-| Boot chain | 鍚姩閾?| UEFI (Project Silicium on kona) 鈫?custom EFI loader 鈫?XNU 8796.121.2 (Darwin 22.5.0, iPhone10,3) |
-| Touch | 瑙︽懜 | ST FTS521 over I2C, multi-touch, gestures, 0 errors in runs |
-| GPU | GPU | Adreno 650 via Mesa freedreno FD650, GMU 587 MHz, hardware-rendered CoreAnimation |
-| Display | 鏄剧ず | AMOLED, TE-synced 60.33 Hz, 7083 ns/line, 2340 lines; 60.2 fps measured with `cpufreq=1` |
-| Screen off / buttons | 鐔勫睆/鎸夐敭 | PM8150 PON side button + volume keys, framebuffer power selector 12 |
-| Wi-Fi | WiFi | QCA6390 over PCIe/MHI/QRTR/QMI 鈫?ath11k on FreeBSD LinuxKPI; scanning works (SCAN_REQ/SCAN_RESULT answered) |
-| **Boot from the phone's own flash** | **鎵嬫満鑷富鍚姩** | UEFI + loader on `boot_b`; a 4 GiB `darwin` partition carved off `userdata` carries payload + 2.33 GiB system image; the loader reads them and boots 鈥?**no PC needed** |
-| **Data persistence (save)** | **鏁版嵁鎸佷箙鍖栵紙淇濆瓨锛?* | `/private/var` packed and written into `darwin` at the end of a run (`var_store=1 ufs_write=1`); first successful save verified: 3 writes, 28 672 bytes, read back identical |
-| Android kept intact | 瀹夊崜鏁版嵁淇濈暀 | The carve keeps Android's `/data` (including a 3.3 GB Termux container), no repartition of other entries |
-| A/B dual-boot wiring | A/B 鍙岀郴缁熸帴绾?| Android on slot `a` (`boot_a` untouched), iOS chain on slot `b` (`boot_b`) |
+### Working / 已实现
 
-### Not yet working / 鏈疄鐜帮紙"TODO"锛?
-| Item | 椤圭洰 | Current state / 鐜扮姸 |
+| Item | 项目 | Notes / 备注 |
 |---|---|---|
-| **Third-party app installation** | **绗笁鏂瑰簲鐢ㄥ畨瑁?* | A test app can be placed into `/Applications` via APFS synthetic entry + `bindfs` (verified: `sideload: Hello.app -> /Applications/Hello.app`), but the **boot then hangs** 鈥?Launch Services' scan of the bind-mounted bundle is suspected. Needs: a Launch Services-friendly install (installd XPC with the stub-AMFI entitlement, or the base project's Sileo/rootless-JB path), not a raw bind mount. |
-| **Persistence restore** | **鎸佷箙鍖栨仮澶?* | The save works; the **load at boot hangs** when a store is present (init's `var_store load`). The store format/unpack path needs investigation. Erasing the two slot headers restores (empty) booting. |
-| Android 鈬?iOS switching without a PC | 鏃犵數鑴戝垏鎹㈠畨鍗?iOS | Today: `fastboot --set-active=a|b` needs a PC. The `misc` BCB slot encoding has not been decoded yet; writing it from the loader/Android would make the switch self-service. |
-| Full storage capacity display | 瀹屾暣瀛樺偍瀹归噺鏄剧ず | iOS "About" shows ~2 GB (the RAM-loaded system image). The base project presents a 128 GiB data volume via a bitmap block allocator; that has not been ported. |
-| Phantom touches | 骞昏Е | Unescaped `0x23` motion events cause phantom touches; the three filters tried made the panel feel worse and were reverted. |
-| Bluetooth (M7) | 钃濈墮 | Not started (Wi-Fi shares the QCA6390 but Bluetooth needs its own M7/PMU bring-up). |
-| Sound / DSP | 闊抽 | Not part of this port's goals yet. |
-| Post-run USB / reboot hygiene | 杩愯缁撴潫鍚庣殑鏀跺熬 | The loader used to hang trying to bring USB up after the kernel returned; it now cold-resets instead (see `scripts/loader-autoboot.patch`). |
+| Boot chain | 启动链 | UEFI (Project Silicium on kona) → custom EFI loader → XNU 8796.121.2 (Darwin 22.5.0, iPhone10,3) |
+| Touch | 触摸 | ST FTS521 over I2C, multi-touch, gestures, 0 errors in runs |
+| GPU | GPU | Adreno 650 via Mesa freedreno FD650, GMU 587 MHz, hardware-rendered CoreAnimation |
+| Display | 显示 | AMOLED, TE-synced 60.33 Hz, 7083 ns/line, 2340 lines; 60.2 fps measured with `cpufreq=1` |
+| Screen off / buttons | 熄屏/按键 | PM8150 PON side button + volume keys, framebuffer power selector 12 |
+| Wi-Fi | WiFi | QCA6390 over PCIe/MHI/QRTR/QMI → ath11k on FreeBSD LinuxKPI; scanning works (SCAN_REQ/SCAN_RESULT answered) |
+| **Boot from the phone's own flash** | **手机自主启动** | UEFI + loader on `boot_b`; a 4 GiB `darwin` partition carved off `userdata` carries payload + 2.33 GiB system image; the loader reads them and boots — **no PC needed** |
+| **Data persistence (save)** | **数据持久化（保存）** | `/private/var` packed and written into `darwin` at the end of a run (`var_store=1 ufs_write=1`); first successful save verified: 3 writes, 28 672 bytes, read back identical |
+| Android kept intact | 安卓数据保留 | The carve keeps Android's `/data` (including a 3.3 GB Termux container), no repartition of other entries |
+| A/B dual-boot wiring | A/B 双系统接线 | Android on slot `a` (`boot_a` untouched), iOS chain on slot `b` (`boot_b`) |
+
+### Not yet working / 未实现（"TODO"）
+
+| Item | 项目 | Current state / 现状 |
+|---|---|---|
+| **Third-party app installation** | **第三方应用安装** | A test app can be placed into `/Applications` via APFS synthetic entry + `bindfs` (verified: `sideload: Hello.app -> /Applications/Hello.app`), but the **boot then hangs** — Launch Services' scan of the bind-mounted bundle is suspected. Needs a Launch Services-friendly install (installd XPC with the stub-AMFI entitlement, or the base project's Sileo/rootless-JB path), not a raw bind mount. |
+| **Persistence restore** | **持久化恢复** | The save works; the **load at boot hangs** when a store is present (init's `var_store load`). The store format/unpack path needs investigation. Erasing the two slot headers restores (empty) booting. |
+| Android ⇄ iOS switching without a PC | 无电脑切换安卓/iOS | Today: `fastboot --set-active=a\|b` needs a PC. The `misc` BCB slot encoding has not been decoded yet; writing it from the loader/Android would make the switch self-service. |
+| Full storage capacity display | 完整存储容量显示 | iOS "About" shows ~2 GB (the RAM-loaded system image). The base project presents a 128 GiB data volume via a bitmap block allocator; that has not been ported. |
+| Phantom touches | 幻触 | Unescaped `0x23` motion events cause phantom touches; the three filters tried made the panel feel worse and were reverted. |
+| Bluetooth (M7) | 蓝牙 | Not started (Wi-Fi shares the QCA6390 but Bluetooth needs its own M7/PMU bring-up). |
+| Sound / DSP | 音频 | Not part of this port's goals yet. |
+| Post-run USB / reboot hygiene | 运行结束后的收尾 | The loader used to hang trying to bring USB up after the kernel returned; it now cold-resets instead (see `scripts/loader-autoboot.patch`). |
 
 ---
 
@@ -58,24 +65,31 @@ build and deploy it, and 鈥?most importantly 鈥?an honest list of what works a
 
 ```
   Power on
-     鈹?     鈻?  ABL (Qualcomm bootloader, A/B slots, unlocked)
-     鈹? slot b
-     鈻?  boot_b: UEFI (Project Silicium, kona drivers) + BootShim + XNUP payload
-     鈹?     鈻?  xnuloader (the port's EFI loader)
-     鈹?  reads the `darwin` partition: header ("IOSSTOR1") 鈫?payload (kernel + small image + cmdline)
-     鈹?                                鈫?2.33 GiB system image into RAM at 0xFC000000
-     鈹?  cmdline: ufs=2 ufs_write=1 var_store=1 鈥?     鈻?  XNU (self-built) 鈫?iOS userland (launchd, SpringBoard, 鈥?
+     │
+     ▼
+  ABL (Qualcomm bootloader, A/B slots, unlocked)
+     │  slot b
+     ▼
+  boot_b: UEFI (Project Silicium, kona drivers) + BootShim + XNUP payload
+     │
+     ▼
+  xnuloader (the port's EFI loader)
+     │   reads the `darwin` partition: header ("IOSSTOR1") → payload (kernel + small image + cmdline)
+     │                                 → 2.33 GiB system image into RAM at 0xFC000000
+     │   cmdline: ufs=2 ufs_write=1 var_store=1 …
+     ▼
+  XNU (self-built) → iOS userland (launchd, SpringBoard, …)
 
   Storage:
-    userdata  鈹€鈹€ shrunk by 4 GiB with f2fs resize (Android data kept)
-    darwin    鈹€鈹€ new partition: [4 KiB header][XNUP payload][2.33 GiB system image][var store: 2脳512 MiB slots]
-    boot_a    鈹€鈹€ Android (untouched)          boot_b 鈹€鈹€ the iOS chain
+    userdata  ── shrunk by 4 GiB with f2fs resize (Android data kept)
+    darwin    ── new partition: [4 KiB header][XNUP payload][2.33 GiB system image][var store: 2×512 MiB slots]
+    boot_a    ── Android (untouched)          boot_b ── the iOS chain
 ```
 
 ### The two storage mechanisms
 
 * **System image**: loaded into RAM by the loader at `0xFC000000` (same address the USB-based
-  workflow used), so the kernel sees it as `md0` 鈥?the root.
+  workflow used), so the kernel sees it as `md0` — the root.
 * **Data volume**: `/private/var` is a RAM filesystem rebuilt at every boot. A saver
   (`var_store watch`, started from `/redwood/etc/rc` as root) registers with the kernel
   (`kern.redwood.var_save`); when the run ends the kernel asks it to pack `/private/var` and write
@@ -96,21 +110,20 @@ scripts/
                           partition identity check, post-run reset
   build-loader.sh         build the patched loader and repack the boot image
   build-image.py          build the `darwin` partition image (header + payload + system)
+  build-sideload.sh       build the app-placement test tool (static, mini libc)
   deploy.md               how the image and the chain get onto the phone
-  patch-kernel-*.py       the kernel changes as applied patches (see src/kernel-patches/README.md)
 src/
   sideload.c              the test "install an app into /Applications" tool (synthetic entry + bindfs)
-  loader/                 our loader code additions (the same content as the patch, per function)
-tools/                    mkrun-style helpers, phone state checker, audio reminder for reboots
+  kernel-patches/         the kernel/loader changes as the scripts that apply them
 NOTICE.md                 attribution and legal notes
 LICENSE                   MIT for this repo's own code
 ```
 
 ## Building (outline)
 
-1. **XNU**: the base project's build (`xnu-build.sh` with the port's file overlay) 鈥?the port's
+1. **XNU**: the base project's build (`xnu-build.sh` with the port's file overlay) — the port's
    kernel sources live outside this repo (derived from Apple's XNU and the base project).
-2. **Loader**: `scripts/build-loader.sh` 鈥?compiles `xnuloader/loader.c` (base project + our patch)
+2. **Loader**: `scripts/build-loader.sh` — compiles `xnuloader/loader.c` (base project + our patch)
    with clang/lld and repacks the Android boot image.
 3. **System image**: build the iOS rootfs from Apple's IPSW with the base project's userland build,
    then `scripts/build-image.py` wraps it: `[header][XNUP payload][system image]`.
@@ -125,10 +138,15 @@ LICENSE                   MIT for this repo's own code
 * **No vendor firmware** is distributed. GPU zap shader, Wi-Fi firmware, etc. are extracted from
   the user's own phone's Android partitions at build time.
 * The kernel work is a derivative of **Apple's XNU** (APSL 2.0) and of the base project
-  **[DBC1349/hackios-mi10ultra](https://github.com/DBC1349/hackios-mi10ultra)**; the port files
-  and the loader come from there. The Wi-Fi stack uses **Linux ath11k** (GPL-2.0) through a
-  FreeBSD LinuxKPI layer 鈥?this repository therefore contains no kernel/Wi-Fi source, only the
-  notes and our own glue scripts.
-* Reference port (read, not copied): **[azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)**.
+  **[DBC1349/hackios-mi10ultra](https://github.com/DBC1349/hackios-mi10ultra)**: the port's file
+  overlay, the loader and the userland build come from there. The Wi-Fi stack runs **Linux
+  ath11k** (GPL-2.0) through a FreeBSD LinuxKPI layer; this repository therefore carries no
+  kernel/Wi-Fi source, only notes and our own glue scripts.
+* **Reference port — [azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)**:
+  the driver approach followed it. In particular the QCA6390 Wi-Fi bring-up
+  (PCIe → MHI → QRTR → QMI/WLFW → ath11k on LinuxKPI, with its own `umi_*` glue and `lx_*`
+  layer) and the boot/storage workflow ideas come from reading that project's code; the sources
+  were audited before use and then adapted to this device (kona), with the port's own names
+  (`redwood_*`). Its Apple/vendor binaries are not redistributed here either.
 * This is a research/hobby project for hardware you own. Do not use it to circumvent Apple's
   software licensing.

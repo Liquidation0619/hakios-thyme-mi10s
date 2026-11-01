@@ -19,7 +19,12 @@ vendor firmware and no third-party source trees**.
 
 * Base port: **DBC1349/hackios-mi10ultra** — XNU port, UEFI/Silicium setup, loader, drivers,
   userland build. The port builds on it directly.
-* Reference implementation (read for ideas, not copied): **azzlantern/hackios-thyme**.
+* **Reference implementation — [azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)**:
+  the driver approach followed it. Its QCA6390 Wi-Fi bring-up (PCIe → MHI → QRTR → QMI/WLFW →
+  ath11k on FreeBSD LinuxKPI, with the project's own `umi_*` glue and `lx_*` layer) and its
+  boot/storage workflow were read, audited for anything unexpected (exec, sockets, file writes),
+  and then adapted to this device with the port's own `redwood_*` naming. No file from that
+  repository is redistributed here — and neither are Apple's or the vendor's binaries from it.
 * XNU: Apple, APSL 2.0.
 * Mesa (freedreno FD650), Linux ath11k / LinuxKPI, FreeBSD net80211: used by the port's kernel with
   their own licenses.
