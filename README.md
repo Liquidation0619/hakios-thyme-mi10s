@@ -112,11 +112,16 @@ scripts/
   build-sideload.sh       build the app-placement test tool (static, mini libc)
   deploy.md               how the image and the chain get onto the phone
 src/
-  sideload.c              the test "install an app into /Applications" tool (synthetic entry + bindfs)
-  kernel-patches/         the kernel/loader changes as the scripts that apply them
+  kernel/                 the port's kernel file overlay — the drivers (touch, display, GPU,
+                          UFS, buttons, battery, Wi-Fi glue, …), the APFS/ramfs/bindfs work,
+                          the stub AMFI, minicrypto, and bsd/conf/files        [APSL 2.0]
+  loader/                 the XNUP loader source (base + this port's patch)   [MIT]
+  userland/               var_store.c — the persistence saver, adapted       [MIT]
+  sideload.c              the "install an app into /Applications" test tool   [MIT]
+  kernel-patches/         the scripts that applied the last kernel/loader changes (record only)
 NOTICE.md                 attribution and legal notes
-LICENSE                   the split licence: MIT for this repo's own content, APSL-2.0 for
-                          src/kernel-patches/ (see LICENSE.APSL)
+LICENSE                   the split licence: MIT for the port content, APSL-2.0 for
+                          src/kernel/ (see LICENSE.APSL)
 ```
 
 ## Building (outline)

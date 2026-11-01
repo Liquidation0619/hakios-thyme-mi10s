@@ -21,8 +21,19 @@ Two licences apply, the same split the base HakiOS project uses (see `LICENSE`):
 |---|---|
 | iOS system image / rootfs / dyld cache / apps | Apple's copyrighted software. Each user builds an image from an IPSW they obtained themselves, for their own device. |
 | Vendor firmware blobs (GPU zap shader, QCA6390 Wi-Fi firmware, ..) | Extracted from the user's own phone's Android partitions. Not redistributable. |
-| The XNU kernel tree and the port's kernel drivers | Derived from Apple's XNU (**APSL 2.0**) and from the base project; the tree also carries **GPL-2.0** Linux `ath11k`/LinuxKPI glue. Keep those with their own licenses, not here. |
-| The `xnuloader` loader in full | Base project code; only our patch is included (`scripts/loader-autoboot.patch`). |
+| The XNU base tree itself | Apple's XNU (APSL 2.0). `src/kernel/` is only the port's overlay of new/changed files, to be copied over the base project's tree. |
+| `xnu/.../loader/identity.h` | Generated from the firmware's device tree by `mkidentity.py`; every user generates their own. |
+| Development backups (`*.bak` variants of driver files) | Working copies of other vendor variants; not part of the port. |
+
+## Third-party code carried in `src/kernel/`
+
+* `bsd/dev/redwood_lx.c`, `redwood_wifi*.c`, `redwood_qmi.c`, `umi_*` — the Wi-Fi glue sits between
+  the kernel and code derived from Linux (`ath11k`, LinuxKPI; **GPL-2.0**) and from the FreeBSD
+  net80211 layer. Keep those licences in mind if you redistribute these files; the upstream Linux
+  sources are not carried here.
+* `bsd/miscfs/apfs/libzbitmap`, `libdeflate` — upstream decompressors (see the notices in those
+  files / directories).
+* `bsd/miscfs/bindfs` — the bind filesystem, from the port's base project.
 
 ## Attribution
 
