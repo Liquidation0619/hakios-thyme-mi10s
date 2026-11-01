@@ -1,0 +1,27 @@
+# Not in git — images, backups, third-party trees and build products.
+
+# phone images / firmware / backups (Apple's and the vendor's copyrighted material)
+*.img
+*.apfs
+*.bin
+*.tar
+*.zip
+*.ipsw
+*.fd
+*.dtb
+
+# reference sources (other projects, other licenses)
+refs/
+cas-src/
+
+# build products
+build/
+out/
+*.o
+*.obj
+*.efi
+*.log
+
+# local state
+.vscode/
+*.tmp

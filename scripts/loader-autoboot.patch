@@ -1,0 +1,321 @@
+--- xnuloader-orig/loader.c	2026-11-01 14:44:51.405543068 +0800
++++ /opt/hackios/xnuloader/loader.c	2026-11-01 18:15:54.700491621 +0800
+@@ -35,6 +35,32 @@
+ #define PAGE_SIZE_MAX       0x4000ULL
+ 
+ #define LOG_PARTITION       u"logdump"
++
++static efi_block_io *find_partition_bio(const char16 *want);
++
++/* ---- the iOS installation in the phone's own flash ----------------------------------------- */
++
++/* The installation's header sits at the first LBA past every logical partition in `super`: the
++ * phone's lpdump has the extents end at disk LBA 15674416 and super begin at 2048, so the header
++ * is at super-relative LBA 15672368.  (tools/ufs-super.py checks exactly that nothing covers the
++ * range from there to the end of super.) */
++#define IOS_SUPER_LBA       15672368ULL
++#define IOS_STORAGE_MAGIC   "IOSSTOR1"
++#define IOS_HEADER_BYTES    4096ULL
++
++struct ios_storage_header {
++	uint8_t  magic[8];
++	uint32_t version;
++	uint32_t boot_mode;             /* 0: boot iOS; 1: stay in the loader for USB */
++	uint64_t payload_len;           /* the XNUP container that follows the header */
++	uint64_t system_len;            /* the whole system image */
++	uint64_t part1_len;             /* system bytes in region A, after the payload */
++	uint64_t part2_len;             /* system bytes in region B (cust) */
++	uint64_t part3_len;             /* system bytes in region C (exaid) */
++	uint64_t flags;
++	uint8_t  reserved[32];
++	uint8_t  sha256[32];
++};
+ #define CHECKPOINT_SELFTEST 999
+ #define PANIC_LOG_SIZE      0x80000u
+ #define NVRAM_BANK_SIZE     0x2000u
+@@ -252,6 +278,9 @@
+ }
+ 
+ /* ------------------------------------------------------------------------ */
++static int wdt_armed;
++static void wdt_pet(void);
++
+ /* Log persistence: raw write to a GPT partition (phone only)               */
+ 
+ static efi_block_io *
+@@ -1488,11 +1517,11 @@
+  * and a write is refused before that block. The identity is the whole of darwin-write.py's: the
+  * same partition, named the same, of the same size, in the same place, on logical unit 0.
+  */
+-#define BLOCK_WRITE_FIRST  2042368ULL                  /* darwin's blocks of 4096: past both cryptexes */
+-#define BLOCK_DARWIN_FIRST 25374720ULL                 /* its first and last LBA of unit 0, as the GPT has them */
+-#define BLOCK_DARWIN_LAST  30617594ULL
++#define BLOCK_WRITE_FIRST  611200ULL                   /* darwin's blocks of 4096: past this port's iOS image */
++#define BLOCK_DARWIN_FIRST 60831744ULL                  /* its first and last LBA of unit 0, as the GPT has them */
++#define BLOCK_DARWIN_LAST  61880314ULL
+ #define BLOCK_DARWIN_TYPE  { 0x7c3457ef, 0x0000, 0x11aa, { 0xaa, 0x11, 0x00, 0x30, 0x65, 0x43, 0xec, 0xac } }
+-#define BLOCK_DARWIN_UNIQ  { 0xfd6854ad, 0x24aa, 0x4fc3, { 0x94, 0xfe, 0x29, 0x01, 0x16, 0x85, 0x8d, 0x68 } }
++#define BLOCK_DARWIN_UNIQ  { 0x987d3b20, 0x8cc1, 0x4d2e, { 0x91, 0x0f, 0xb1, 0xb4, 0x06, 0xf2, 0x12, 0xde } }
+ 
+ /*
+  * The partitions first, then the logical units they are on (BLOCK_PART_UNIT, named unit0, unit1,
+@@ -2616,6 +2645,7 @@
+ 	uint64_t base;
+ 	uint32_t width, height, stride;
+ } SCREEN;
++static void ios_colour(uint32_t bgra);
+ static uint64_t win_base, win_size; /* XNU's physical memory window, claimed once */
+ static uint64_t resident_rd_size;   /* root image kept at win_base + RESIDENT_RD_OFFSET, 0 if none */
+ static char last_result[64] = "idle";
+@@ -2739,6 +2769,9 @@
+ 	uint32_t desc_ver;
+ 	struct payload_info pi;
+ 
++	ios_colour(0xFF00FF00);                /* green: payload read */
++	print("ios: stage payload done\n");
++	flush_log();
+ 	if (!parse_payload(&pi, 1) || pi.kernel == NULL) {
+ 		print("no kernel in payload\n");
+ 		return 0;
+@@ -3762,6 +3795,24 @@
+ 				compose_logs(NULL, 0);
+ 			}
+ 			fb_reply("OKAY", "");
++		} else if (starts_with(cmd, "oem fastboot")) {
++			/* write Android's boot command block: the next reset goes to the bootloader */
++			efi_block_io *misc = find_partition_bio(u"misc");
++			static char bcb[4096];
++			efi_status st = 1;
++
++			memset(bcb, 0, sizeof(bcb));
++			memcpy(bcb, "bootonce-bootloader", 20);
++			if (misc != NULL) {
++				st = misc->write_blocks(misc, misc->media->media_id, 0, sizeof(bcb), bcb);
++				if (!EFI_ERROR(st)) {
++					misc->flush_blocks(misc);
++				}
++			}
++			print("ios: oem fastboot: bcb written (%x), resetting\n", (uint64_t)st);
++			flush_log();
++			fb_reply(EFI_ERROR(st) ? "FAIL" : "OKAY", "");
++			reboot();
+ 		} else if (starts_with(cmd, "reboot") || starts_with(cmd, "oem reboot")) {
+ 			fb_reply("OKAY", "");
+ 			BS->stall(200000);
+@@ -3924,6 +3975,188 @@
+ 	SCREEN.stride = PHONE_WIDTH * 4;
+ }
+ 
++/* Fill the screen with one colour (0xAARRGGBB as UEFI's GOP wants it). The loader's only output on
++ * a phone with no serial port; the iOS boot path paints a colour per step with it. */
++static void
++ios_colour(uint32_t bgra)
++{
++	if (SCREEN.base == 0 || SCREEN.stride == 0) {
++		return;
++	}
++	volatile uint32_t *row = (volatile uint32_t *)(uintptr_t)SCREEN.base;
++	uint32_t words = SCREEN.stride / 4;
++
++	for (uint32_t y = 0; y < SCREEN.height; y++) {
++		volatile uint32_t *p = row + (uint64_t)y * words;
++		for (uint32_t x = 0; x < SCREEN.width; x++) {
++			p[x] = bgra;
++		}
++	}
++}
++
++/* A GPT partition's block I/O, by name (UTF-16, as the partition table has it). */
++static efi_block_io *
++find_partition_bio(const char16 *want)
++{
++	static const efi_guid part_guid = EFI_PARTITION_INFO_GUID;
++	static const efi_guid blk_guid = EFI_BLOCK_IO_GUID;
++	efi_handle *handles;
++	uint64_t count;
++
++	if (EFI_ERROR(BS->locate_handle_buffer(ByProtocol, &part_guid, NULL, &count, &handles))) {
++		return NULL;
++	}
++	for (uint64_t i = 0; i < count; i++) {
++		efi_partition_info *info;
++		efi_block_io *bio;
++		int match = 1;
++
++		if (EFI_ERROR(BS->handle_protocol(handles[i], &part_guid, (void **)&info)) || info->type != 2) {
++			continue;
++		}
++		for (unsigned k = 0; want[k] != 0 || info->name[k] != 0; k++) {
++			if (info->name[k] != want[k]) {
++				match = 0;
++				break;
++			}
++		}
++		if (match && !EFI_ERROR(BS->handle_protocol(handles[i], &blk_guid, (void **)&bio))) {
++			return bio;
++		}
++	}
++	return NULL;
++}
++
++/* Read `len` bytes of a partition, from byte offset `at`, in chunks that keep whole blocks. *//* Read bytes of a partition from byte offset `at` into `dest`, in blocks through the loader's own
++ * storage buffer. `at` need not be block-aligned: the leading partial block is read too. */
++static int
++read_partition_bytes(efi_block_io *bio, uint64_t at, uint64_t len, uint8_t *dest)
++{
++	uint64_t bs = bio->media->block_size;
++	uint64_t done = 0;
++
++	if (bio == NULL || bs == 0 || bs > BLOCK_BUFFER_SIZE) {
++		print("ios: bad partition read (%d bytes at %x)\n", len, at);
++		return 0;
++	}
++	if ((at % bs) != 0) {
++		uint64_t head = bs - (at % bs);
++		efi_status st;
++
++		if (head > len) {
++			head = len;
++		}
++		st = bio->read_blocks(bio, bio->media->media_id, at / bs, bs, block_buffer);
++		if (EFI_ERROR(st)) {
++			print("ios: reading the leading block at %x: error %x\n", at, (uint64_t)st);
++			return 0;
++		}
++		memcpy(dest, block_buffer + (at % bs), (size_t)head);
++		done = head;
++	}
++	while (done < len) {
++		uint64_t pos = at + done;
++		uint64_t want = len - done < BLOCK_BUFFER_SIZE ? (len - done + bs - 1) / bs * bs : BLOCK_BUFFER_SIZE;
++		efi_status st = bio->read_blocks(bio, bio->media->media_id, pos / bs, want, block_buffer);
++
++		if (EFI_ERROR(st)) {
++			print("ios: reading (at %x, %d bytes): error %x\n", pos, want, (uint64_t)st);
++			return 0;
++		}
++		memcpy(dest + done, block_buffer, len - done < want ? len - done : want);
++		done += len - done < want ? len - done : want;
++		if (wdt_armed) {
++			wdt_pet();
++		}
++	}
++	return 1;
++}
++
++/*
++ * Boot the iOS installation from its own partition ("ios", carved off the end of userdata):
++ * header at 0, the XNUP payload after it, the system image after that.
++ * Returns only when there is nothing to boot or when the kernel has returned.
++ */
++static void
++ios_storage_try_boot(void)
++{
++	static struct ios_storage_header hdr;
++	struct payload_info pi;
++	efi_block_io *ios = find_partition_bio(u"darwin");
++	uint64_t payload_at = IOS_HEADER_BYTES;
++
++	ios_colour(0xFF000000);                /* black: looking */
++	if (ios == NULL) {
++		print("ios: no installation partition\n");
++		flush_log();
++		return;
++	}
++	if (!read_partition_bytes(ios, 0, IOS_HEADER_BYTES, (uint8_t *)&hdr)) {
++		return;
++	}
++	ios_colour(0xFFFF0000);                /* blue: header read */
++	print("ios: stage header done, magic ok, system %d, payload %d\n", hdr.system_len, hdr.payload_len);
++	flush_log();
++	if (memcmp(hdr.magic, IOS_STORAGE_MAGIC, 8) != 0) {
++		print("ios: no installation (magic %x)\n", (uint64_t)*(const uint64_t *)hdr.magic);
++		return;
++	}
++	print("ios: installation found: version %d, system %d bytes, payload %d\n",
++	    hdr.version, hdr.system_len, hdr.payload_len);
++	if (hdr.boot_mode != 0) {
++		print("ios: boot_mode %d wants the loader instead\n", hdr.boot_mode);
++		return;
++	}
++	if (hdr.payload_len == 0 || hdr.payload_len > PAYLOAD_MAX_SIZE) {
++		print("ios: payload size is not sane\n");
++		return;
++	}
++	if (!read_partition_bytes(ios, payload_at, hdr.payload_len, (uint8_t *)PAYLOAD_BASE)) {
++		return;
++	}
++	ios_colour(0xFF00FF00);                /* green: payload read */
++	if (!parse_payload(&pi, 1) || pi.kernel == NULL) {
++		print("ios: the payload has no kernel\n");
++		return;
++	}
++	pi.resident_rd = hdr.system_len;
++	if (!choose_window(&pi)) {
++		print("ios: no memory window for the kernel\n");
++		return;
++	}
++	ios_colour(0xFF00FFFF);                /* yellow: window chosen */
++	print("ios: stage window done: base %x size %x\n", win_base, win_size);
++	flush_log();
++	if (win_size < RESIDENT_RD_OFFSET + hdr.system_len + RESIDENT_RD_RESERVE) {
++		print("ios: the window (%d) is too small for the system image (%d)\n", win_size, hdr.system_len);
++		return;
++	}
++	uint8_t *dest = (uint8_t *)(win_base + RESIDENT_RD_OFFSET);
++	uint64_t sys_at = payload_at + hdr.payload_len;
++	print("ios: putting the system image at %x (%d bytes from %x)\n",
++	    win_base + RESIDENT_RD_OFFSET, hdr.system_len, sys_at);
++	if (!read_partition_bytes(ios, sys_at, hdr.system_len, dest)) {
++		return;
++	}
++	ios_colour(0xFFFF00FF);                /* magenta: system image read */
++	print("ios: stage system done, NXSB %x\n", (uint64_t)*(const uint32_t *)(dest + 32));
++	flush_log();
++	if (memcmp(dest + 32, "NXSB", 4) != 0) {
++		print("ios: what was read back is not an APFS container (magic %x)\n",
++		    (uint64_t)*(const uint32_t *)(dest + 32));
++		return;
++	}
++	resident_rd_size = hdr.system_len;
++	ios_colour(0xFFFFFFFF);                /* white: running the kernel */
++	print("ios: stage all done, running the kernel from the flash\n");
++	flush_log();
++	print("ios: running the kernel\n");
++	run_kernel(0, 0);
++	/* the run is over (and the data volume saved): reset, so the next boot loads the store back */
++	flush_log();
++	reboot();
++}
++
+ efi_status EFIAPI
+ efi_main(efi_handle image, efi_system_table *st)
+ {
+@@ -3951,8 +4184,16 @@
+ 		for (unsigned i = 0; i < sizeof(platforms) / sizeof(platforms[0]); i++)
+ 			if (platforms[i]->fb_base == SCREEN.base)
+ 				PLAT = platforms[i];
+-		if (PLAT == &platform_qemu_virt)
+-			ramfb_phone_screen();
++		if (PLAT == &platform_qemu_virt) {
++			/* An unknown display is still a Qualcomm phone, not QEMU ramfb: kona and yupik
++			 * share the platform constants, only the framebuffer base differs. */
++			static struct platform plat_unknown;
++			plat_unknown = platform_redwood;
++			plat_unknown.name = "unknown-kona";
++			plat_unknown.fb_base = SCREEN.base;
++			PLAT = &plat_unknown;
++			print("unknown display, using the qualcomm defaults\n");
++		}
+ 		print("display %d x %d at %x\n", (uint64_t)SCREEN.width, (uint64_t)SCREEN.height, SCREEN.base);
+ 	}
+ 	print("platform %s\n", PLAT->name);
+@@ -3961,6 +4202,8 @@
+ 	wdt_arm();
+ 
+ 	int have_payload = parse_payload(&pi, 0);
++	/* the phone's own flash first: an installation there is booted unless its header says not to */
++	ios_storage_try_boot();
+ 	if (have_payload && pi.usb_mode && usb_start()) {
+ 		flush_log();
+ 		usb_command_loop();
