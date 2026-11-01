@@ -55,7 +55,7 @@ build and deploy it, and — most importantly — an honest list of what works a
 | Android ⇄ iOS switching without a PC | 无电脑切换安卓/iOS | Today: `fastboot --set-active=a\|b` needs a PC. The `misc` BCB slot encoding has not been decoded yet; writing it from the loader/Android would make the switch self-service. |
 | Full storage capacity display | 完整存储容量显示 | iOS "About" shows ~2 GB (the RAM-loaded system image). The base project presents a 128 GiB data volume via a bitmap block allocator; that has not been ported. |
 | Phantom touches | 幻触 | Unescaped `0x23` motion events cause phantom touches; the three filters tried made the panel feel worse and were reverted. |
-| Bluetooth (M7) | 蓝牙 | Not started (Wi-Fi shares the QCA6390 but Bluetooth needs its own M7/PMU bring-up). |
+| Bluetooth | 蓝牙 | Not started (Wi-Fi shares the QCA6390 but Bluetooth needs its own PMU bring-up). |
 | Sound / DSP | 音频 | Not part of this port's goals yet. |
 | Post-run USB / reboot hygiene | 运行结束后的收尾 | The loader used to hang trying to bring USB up after the kernel returned; it now cold-resets instead (see `scripts/loader-autoboot.patch`). |
 
