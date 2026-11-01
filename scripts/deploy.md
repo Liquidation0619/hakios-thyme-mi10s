@@ -2,16 +2,15 @@
 
 The state this describes is the one at the end of the port's last session: Android on slot `a`,
 the iOS chain on slot `b`, a 4 GiB `darwin` partition at the end of `userdata` holding the image.
-Adjust the values to your own device; the exact numbers this port used are in
-`docs/DEVELOPMENT.md`.
+Adjust the values to your own device; `docs/ROADMAP.md` lists what is still open.
 
 ## 0. Prerequisites / 前提
 
 * Unlocked bootloader (`verifiedbootstate = orange`), `adb` + `fastboot` on the host.
 * **Backups first**: `super` (8.5 GB), `cust`, `exaid`, `boot_a/b`, `vbmeta_a/b`, `misc`,
   `dtbo_a/b`, `vendor_boot_a/b`, and any `userdata` data you want to keep. The port's own backup
-  set was 13.7 GB and saved the project twice (see DEVELOPMENT.md: a wrong LBA wrote over the tail
-  of `mi_ext_a` and Android stopped booting until `super` was restored from the backup).
+  set was 13.7 GB, and it saved the project: a wrong LBA once wrote over the tail of `mi_ext_a`
+  and Android stopped booting until `super` was restored from the backup.
 * 备份优先：super 全量、cust、exaid、boot 两个槽、vbmeta、misc 等。移植过程中曾因写错 1 MB 覆盖
   `mi_ext_a` 导致安卓无法启动，靠 super 备份恢复。
 

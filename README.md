@@ -103,7 +103,6 @@ build and deploy it, and — most importantly — an honest list of what works a
 ```
 README.md                 this file (bilingual)
 docs/
-  DEVELOPMENT.md          the port's full development log (Chinese; the working record)
   ROADMAP.md              the TODO list, in more detail (bilingual)
 scripts/
   loader-autoboot.patch   our loader changes: boot iOS from the phone's own `darwin` partition,
@@ -129,7 +128,8 @@ LICENSE                   MIT for this repo's own code
    then `scripts/build-image.py` wraps it: `[header][XNUP payload][system image]`.
 4. **Phone**: shrink `userdata` by 4 GiB (f2fs resize, keep Android data), carve a `darwin`
    partition (GPT with CRCs), write the image, flash the chain to `boot_b`, set the active slot.
-   All steps and the exact values are in docs/DEVELOPMENT.md.
+   The steps are in `scripts/deploy.md`; the exact values this port used are in the commit log and
+   `docs/ROADMAP.md`.
 
 ## Legal and attribution
 
