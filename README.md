@@ -1,10 +1,10 @@
-# hackios-thyme — HackiOS on the Xiaomi Mi 10S (thyme / SM8250 "kona")
+# hakios-thyme — Hakios on the Xiaomi Mi 10S (thyme / Snapdragon 870)
 
 [中文说明](#中文说明) · [Status](#status) · [Architecture](#architecture) · [Repository layout](#repository-layout) · [Legal](#legal-and-attribution)
 
-A port of [HackiOS](https://github.com/DBC1349/hackios-mi10ultra) — unmodified iOS 16.5 userland
+A port of [Hakios](https://github.com/DBC1349/hackios-mi10ultra) — unmodified iOS 16.5 userland
 (launchd → backboardd → SpringBoard) on top of a self-built XNU — to a **Xiaomi Mi 10S**
-(codename *thyme*, Qualcomm SM8250 "kona", Adreno 650, UFS 3.1).
+(codename *thyme*, Qualcomm **Snapdragon 870**, SM8250-AC "kona", Adreno 650, UFS 3.1).
 
 This repository is the **port's working record**: how the phone was brought up, the scripts that
 build and deploy it, and — most importantly — an honest list of what works and what does not yet.
@@ -19,7 +19,7 @@ build and deploy it, and — most importantly — an honest list of what works a
 ## 中文说明
 
 这是一个把 **未改动的 iOS 16.5 用户态**（launchd → backboardd → SpringBoard）移植到
-**小米 10S（thyme，骁龙 865 / SM8250 "kona"，Adreno 650，UFS 3.1）** 的项目，内核为自行构建的 XNU。
+**小米 10S（thyme，骁龙 870 / SM8250-AC "kona"，Adreno 650，UFS 3.1）** 的项目，内核为自行构建的 XNU。
 
 本仓库是**移植过程的工作记录**：启动链、构建/部署脚本，以及最重要的——**已实现和未实现目标的清单**。
 
