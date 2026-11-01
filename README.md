@@ -146,8 +146,7 @@ LICENSE                   the split licence: MIT for the port content, APSL-2.0 
 * The kernel work is a derivative of **Apple's XNU** (APSL 2.0) and of the base project
   **[DBC1349/hackios-mi10ultra](https://github.com/DBC1349/hackios-mi10ultra)**: the port's file
   overlay, the loader and the userland build come from there. The Wi-Fi stack runs **Linux
-  ath11k** (GPL-2.0) through a FreeBSD LinuxKPI layer; this repository therefore carries no
-  kernel/Wi-Fi source, only notes and our own glue scripts.
+  ath11k** (GPL-2.0) through a FreeBSD LinuxKPI layer.
 * **Reference port — [azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)**:
   the driver approach followed it. In particular the QCA6390 Wi-Fi bring-up
   (PCIe → MHI → QRTR → QMI/WLFW → ath11k on LinuxKPI, with its own `umi_*` glue and `lx_*`
