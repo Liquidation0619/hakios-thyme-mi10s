@@ -25,7 +25,7 @@ build and deploy it, and — most importantly — an honest list of what works a
 
 > 仓库中**不包含** iOS 系统本体。系统镜像需要使用者自己用苹果官方 IPSW 在自己的设备上生成
 >（见[法律与致谢](#legal-and-attribution)）。所有厂商固件（GPU/WiFi/音频等 blob）都从手机
-> 自己的安卓分区提取，同样不随仓库分发。
+> 自己的安卓分区提取。
 
 ---
 
