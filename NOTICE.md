@@ -6,6 +6,15 @@ This repository holds **documentation and our own small tools** for a hobby port
 userland to a Xiaomi Mi 10S. It intentionally contains **no Apple software, no system images, no
 vendor firmware and no third-party source trees**.
 
+## Licensing of this repository
+
+Two licences apply, the same split the base HakiOS project uses (see `LICENSE`):
+
+* **MIT** — the documentation, the scripts, the build tools, `src/sideload.c` and the loader patch.
+* **APSL 2.0** — `src/kernel-patches/`, the modifications to the port's kernel tree, which is a
+  derivative of Apple's XNU. The full text is in `LICENSE.APSL`; the Apple notices stay with the
+  files those patches are applied to.
+
 ## Not included (and why)
 
 | Thing | Why not |

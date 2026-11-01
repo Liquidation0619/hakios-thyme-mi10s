@@ -115,7 +115,8 @@ src/
   sideload.c              the test "install an app into /Applications" tool (synthetic entry + bindfs)
   kernel-patches/         the kernel/loader changes as the scripts that apply them
 NOTICE.md                 attribution and legal notes
-LICENSE                   MIT for this repo's own code
+LICENSE                   the split licence: MIT for this repo's own content, APSL-2.0 for
+                          src/kernel-patches/ (see LICENSE.APSL)
 ```
 
 ## Building (outline)

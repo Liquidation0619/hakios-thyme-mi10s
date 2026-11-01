@@ -1,3 +1,24 @@
+hackios-thyme
+
+Two licenses apply, by directory — the same split the base HakiOS project uses:
+
+1. The kernel-side material: everything under src/kernel-patches/ is a description of modifications
+   to files that are themselves a derivative work of Apple's XNU (the port's kernel tree), and is
+   therefore licensed under the **Apple Public Source License, Version 2.0** — the full text is in
+   LICENSE.APSL. Per its terms these modifications are published here as source, and the notices
+   that belong to the modified files stay with them (they are not copied here).
+
+2. Everything else that is ours — the documentation, the scripts, the build tools, src/sideload.c,
+   the loader patch in scripts/loader-autoboot.patch and the tools/ helpers — is licensed under the
+   **MIT License** below.
+
+Third-party components and their licenses are listed in NOTICE.md. Apple's operating system and its
+firmware images (IPSW), Apple's trademarks, and the phone's own firmware are **not** part of this
+repository and are not licensed by it; every user obtains them from their own device and their own
+copy of the software.
+
+----------------------------------------------------------------------------------------------
+
 MIT License
 
 Copyright (c) 2026 the hackios-thyme port contributors
@@ -19,8 +40,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-Note: this license covers the contents of this repository only. Apple's XNU
-(APSL 2.0), the base project, Linux (GPL-2.0), Mesa and other third-party
-components referenced here keep their own licenses; nothing of theirs is
-redistributed in this repository.
