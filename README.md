@@ -1,31 +1,32 @@
-# hakios-thyme — Hakios on the Xiaomi Mi 10S (thyme / Snapdragon 870)
+# hakios-thyme-mi10s
 
-[中文说明](#中文说明) · [Status](#status) · [Architecture](#architecture) · [Repository layout](#repository-layout) · [Legal](#legal-and-attribution)
+**Hakios on the Xiaomi Mi 10S (thyme)** — unmodified iOS 16.5 userland on a self-built XNU kernel.
 
-A port of [Hakios](https://github.com/DBC1349/hackios-mi10ultra) — unmodified iOS 16.5 userland
-(launchd → backboardd → SpringBoard) on top of a self-built XNU — to a **Xiaomi Mi 10S**
-(codename *thyme*, Qualcomm **Snapdragon 870**, SM8250-AC "kona", Adreno 650, UFS 3.1).
+[中文说明](#中文说明) · [Status](#status) · [Architecture](#architecture) · [Repository layout](#repository-layout) · [Building](#building) · [Roadmap](#roadmap) · [Legal](#legal-and-attribution)
 
-This repository is the **port's working record**: how the phone was brought up, the scripts that
-build and deploy it, and — most importantly — an honest list of what works and what does not yet.
+A port of [Hakios](https://github.com/DBC1349/hackios-mi10ultra) to a **Xiaomi Mi 10S** — codename
+*thyme*, Qualcomm **Snapdragon 870** (SM8250-AC "kona"), Adreno 650, UFS 3.1, 1080×2340 90 Hz AMOLED.
+Apple's iOS 16.5 userland — launchd → backboardd → SpringBoard — runs unmodified on top of an XNU
+kernel this project builds from source, on real hardware.
 
-> iOS itself is **not** in this repository. The system image has to be built by whoever runs it,
-> from Apple's own IPSW, on their own hardware (see [Legal](#legal-and-attribution)). The same
-> goes for every vendor firmware blob: they are extracted from the phone's own Android
-> partitions.
+The **kernel and driver sources are in [`src/`](src/)**: `src/kernel/` is the port's file overlay
+(the drivers and the XNU changes, copied over an XNU tree), `src/loader/` the EFI loader,
+`src/userland/` the persistence saver. The iOS image and every vendor firmware blob are *not* in
+this repository — see [Legal](#legal-and-attribution).
 
 ---
 
 ## 中文说明
 
 这是一个把 **未改动的 iOS 16.5 用户态**（launchd → backboardd → SpringBoard）移植到
-**小米 10S（thyme，骁龙 870 / SM8250-AC "kona"，Adreno 650，UFS 3.1）** 的项目，内核为自行构建的 XNU。
+**小米 10S（thyme，骁龙 870 / SM8250-AC "kona"，Adreno 650，UFS 3.1，1080×2340 90Hz AMOLED）** 的项目：
+内核是用源码自行构建的 XNU，运行在真实手机上。
 
-本仓库是**移植过程的工作记录**：启动链、构建/部署脚本，以及最重要的——**已实现和未实现目标的清单**。
+**内核与驱动源码都在 [`src/`](src/)** 目录：`src/kernel/` 是端口的文件覆盖层（驱动 + XNU 修改），
+`src/loader/` 是 EFI 引导器，`src/userland/` 是持久化保存器。
 
-> 仓库中**不包含** iOS 系统本体。系统镜像需要使用者自己用苹果官方 IPSW 在自己的设备上生成
->（见[法律与致谢](#legal-and-attribution)）。所有厂商固件（GPU/WiFi/音频等 blob）都从手机
-> 自己的安卓分区提取，同样不随仓库分发。
+> 仓库中**不包含** iOS 系统本体与任何厂商固件：系统镜像需要使用者用苹果官方 IPSW 自己构建
+>（见[法律与致谢](#legal-and-attribution)），固件从手机自己的安卓分区提取。
 
 ---
 
@@ -33,31 +34,35 @@ build and deploy it, and — most importantly — an honest list of what works a
 
 ### Working / 已实现
 
-| Item | 项目 | Notes / 备注 |
+| Item | 项目 | Notes / 说明 |
 |---|---|---|
-| Boot chain | 启动链 | UEFI (Project Silicium on kona) → custom EFI loader → XNU 8796.121.2 (Darwin 22.5.0, iPhone10,3) |
-| Touch | 触摸 | ST FTS521 over I2C, multi-touch, gestures, 0 errors in runs |
-| GPU | GPU | Adreno 650 via Mesa freedreno FD650, GMU 587 MHz, hardware-rendered CoreAnimation |
-| Display | 显示 | AMOLED, TE-synced 60.33 Hz, 7083 ns/line, 2340 lines; 60.2 fps measured with `cpufreq=1` |
-| Screen off / buttons | 熄屏/按键 | PM8150 PON side button + volume keys, framebuffer power selector 12 |
+| Boot chain | 启动链 | UEFI (Project Silicium) → custom EFI loader → XNU 8796.121.2 (Darwin 22.5.0, iPhone10,3) |
+| **iOS desktop** | **iOS 桌面** | launchd → backboardd → SpringBoard, icons, gestures, apps launch |
+| Touch | 触摸 | ST FTS521 over I2C — multi-touch, gestures, 0 errors in runs |
+| GPU | GPU | Adreno 650 via Mesa freedreno FD650 (GMU 587 MHz); CoreAnimation rendered by hardware |
+| Display | 显示 | TE-synced 60.33 Hz (the panel's firmware default), 7083 ns/line, 2340 lines; frames follow the panel's scan (no tearing) |
+| Screen off / buttons | 熄屏/按键 | PM8150 PON side button + volume keys; framebuffer power selector |
 | Wi-Fi | WiFi | QCA6390 over PCIe/MHI/QRTR/QMI → ath11k on FreeBSD LinuxKPI; scanning works (SCAN_REQ/SCAN_RESULT answered) |
-| **Boot from the phone's own flash** | **手机自主启动** | UEFI + loader on `boot_b`; a 4 GiB `darwin` partition carved off `userdata` carries payload + 2.33 GiB system image; the loader reads them and boots — **no PC needed** |
-| **Data persistence (save)** | **数据持久化（保存）** | `/private/var` packed and written into `darwin` at the end of a run (`var_store=1 ufs_write=1`); first successful save verified: 3 writes, 28 672 bytes, read back identical |
-| Android kept intact | 安卓数据保留 | The carve keeps Android's `/data` (including a 3.3 GB Termux container), no repartition of other entries |
-| A/B dual-boot wiring | A/B 双系统接线 | Android on slot `a` (`boot_a` untouched), iOS chain on slot `b` (`boot_b`) |
+| **Chinese UI** | **中文界面** | The system image is built with the zh-Hans/zh-Hant localisations kept, and the PingFang **Medium** weight is kept (it is the icon-label font — without it the home-screen app names turn into tofu squares) |
+| **Rootless jailbreak** | **越狱环境** | A Procursus prefix (Sileo) at `/jb`, grafted onto `/var/jb` by `init`; **Sileo opens and its packages install**. The jailbreak small image is trimmed so kernel+image fit the loader's 64 MiB payload |
+| **USB boot (development)** | **USB 启动（开发）** | `fastboot boot loader.img` + staging the 2.4 GiB system image and a 53 MiB payload — the fastest test loop; no flash writes |
+| Boot from the phone's own flash | 手机自主启动 | UEFI + loader on `boot_b`, a 4 GiB `darwin` partition carved off `userdata` carries payload + system image; the loader reads and boots them (no PC). *Not the current development path* — see Roadmap |
+| Data persistence (save) | 数据持久化（保存）| `/private/var` packed and written into `darwin` at the end of a run (`var_store=1 ufs_write=1`); verified: 3 writes, 28 672 B, read back identical |
+| Android kept intact | 安卓数据保留 | The carve keeps Android's `/data` (incl. a 3.3 GB Termux container); no other partition touched |
+| A/B dual-boot wiring | A/B 双系统 | Android on slot `a` (`boot_a` untouched), the iOS chain on slot `b` (`boot_b`) |
 
-### Not yet working / 未实现（"TODO"）
+### Not yet working / 未实现
 
-| Item | 项目 | Current state / 现状 |
+| Item | 项目 | State / 现状 |
 |---|---|---|
-| **Third-party app installation** | **第三方应用安装** | A test app can be placed into `/Applications` via APFS synthetic entry + `bindfs` (verified: `sideload: Hello.app -> /Applications/Hello.app`), but the **boot then hangs** — Launch Services' scan of the bind-mounted bundle is suspected. Needs a Launch Services-friendly install (installd XPC with the stub-AMFI entitlement, or the base project's Sileo/rootless-JB path), not a raw bind mount. |
-| **Persistence restore** | **持久化恢复** | The save works; the **load at boot hangs** when a store is present (init's `var_store load`). The store format/unpack path needs investigation. Erasing the two slot headers restores (empty) booting. |
-| Android ⇄ iOS switching without a PC | 无电脑切换安卓/iOS | Today: `fastboot --set-active=a\|b` needs a PC. The `misc` BCB slot encoding has not been decoded yet; writing it from the loader/Android would make the switch self-service. |
-| Full storage capacity display | 完整存储容量显示 | iOS "About" shows ~2 GB (the RAM-loaded system image). The base project presents a 128 GiB data volume via a bitmap block allocator; that has not been ported. |
-| Phantom touches | 幻触 | Unescaped `0x23` motion events cause phantom touches; the three filters tried made the panel feel worse and were reverted. |
-| Bluetooth (M7) | 蓝牙 | Not started (Wi-Fi shares the QCA6390 but Bluetooth needs its own M7/PMU bring-up). |
-| Sound / DSP | 音频 | Not part of this port's goals yet. |
-| Post-run USB / reboot hygiene | 运行结束后的收尾 | The loader used to hang trying to bring USB up after the kernel returned; it now cold-resets instead (see `scripts/loader-autoboot.patch`). |
+| **90 Hz refresh** | **90Hz 高刷** | The panel is the `j1u 42 02 0b` (Mi 10S) command-mode panel; the firmware leaves it at 60.33 Hz. The vendor's 90 Hz mode is known (see [Roadmap](#roadmap)): same pixel clock, DCS `2F 04` + `26 02` in HS mode. The kernel can transmit DSI commands (transmission completes) but the panel does not switch — the vendor's real path is the command-DMA buffer, which needs the display SMMU set up. **In progress.** |
+| Persistence restore | 持久化恢复 | The save works; the load at boot hangs (init's `var_store load`) — the store format/unpack path needs investigation |
+| Android ⇄ iOS switching without a PC | 无电脑切换 | Needs a PC today (`fastboot --set-active=a\|b`); the `misc` BCB slot encoding is not decoded |
+| Full storage capacity | 完整存储容量 | iOS "About" shows ~2 GB (the RAM-loaded system image); the base project's bitmap block allocator is not ported |
+| Third-party app installation | 第三方应用安装 | The jailbreak provides Sileo and package installation; a raw "app into /Applications" path (synthetic entry + bindfs) hangs Launch Services at boot |
+| Phantom touches | 幻触 | Unescaped `0x23` motion events; the filters tried made the panel feel worse |
+| Bluetooth / sound | 蓝牙 / 音频 | Not started (sound binaries exist in the image, no DSP bring-up yet) |
+| Post-run USB / reboot hygiene | 运行收尾 | The loader now cold-resets after the run instead of hanging in USB bring-up |
 
 ---
 
@@ -67,92 +72,137 @@ build and deploy it, and — most importantly — an honest list of what works a
   Power on
      │
      ▼
-  ABL (Qualcomm bootloader, A/B slots, unlocked)
-     │  slot b
+  ABL (Qualcomm bootloader, unlocked, A/B slots)          ── same as Android's
+     │  slot b                                              (boot_a untouched)
      ▼
-  boot_b: UEFI (Project Silicium, kona drivers) + BootShim + XNUP payload
+  boot_b: UEFI (Project Silicium, kona) + BootShim + XNUP payload
      │
      ▼
-  xnuloader (the port's EFI loader)
-     │   reads the `darwin` partition: header ("IOSSTOR1") → payload (kernel + small image + cmdline)
-     │                                 → 2.33 GiB system image into RAM at 0xFC000000
-     │   cmdline: ufs=2 ufs_write=1 var_store=1 …
+  xnuloader (the port's EFI loader)                       ── src/loader/
+     │   • reads the `darwin` partition: header "IOSSTOR1" → payload (kernel + small image + cmdline)
+     │   • or, in development, serves USB: oem ramdisk → stage system → stage payload → oem run
+     │   • writes its log to the `logdump` partition; samples the kernel's console every 2 s
      ▼
-  XNU (self-built) → iOS userland (launchd, SpringBoard, …)
-
-  Storage:
-    userdata  ── shrunk by 4 GiB with f2fs resize (Android data kept)
-    darwin    ── new partition: [4 KiB header][XNUP payload][2.33 GiB system image][var store: 2×512 MiB slots]
-    boot_a    ── Android (untouched)          boot_b ── the iOS chain
+  XNU (self-built) → stage0 → init → launchd → SpringBoard     ── src/kernel/ (drivers), src/userland/
+     │
+     │  storage:  userdata (shrunk 4 GiB, Android data kept)
+     │            darwin: [4 KiB header][XNUP payload][2.4 GiB system image][var store 2×512 MiB]
+     │            /private/var is a RAM filesystem, saved into the store at run end
+     ▼
+  iOS 16.5 userland
 ```
 
-### The two storage mechanisms
+### Where each driver lives (in `src/kernel/`)
 
-* **System image**: loaded into RAM by the loader at `0xFC000000` (same address the USB-based
-  workflow used), so the kernel sees it as `md0` — the root.
-* **Data volume**: `/private/var` is a RAM filesystem rebuilt at every boot. A saver
-  (`var_store watch`, started from `/redwood/etc/rc` as root) registers with the kernel
-  (`kern.redwood.var_save`); when the run ends the kernel asks it to pack `/private/var` and write
-  it through `/dev/rufs_darwin` (the loader serves the writes, verifies each read-back) into the
-  store's two alternating slots. At boot `init` runs `var_store load` before launchd.
-
----
+| Part | Files |
+|---|---|
+| Touch | `bsd/dev/redwood_st_touch.c`, `redwood_input.c`, `fts_port/` |
+| Display / framebuffer sync | `bsd/dev/redwood_display.c`, `iokit/Kernel/MiniIOMobileFramebuffer.cpp` |
+| GPU | `bsd/dev/redwood_adreno.c`, `iokit/Kernel/RedwoodGPU.cpp`, `MiniIOSurface.cpp` |
+| Storage (UFS + the `darwin` store) | `bsd/dev/redwood_ufs.c`, `redwood_ufshc.c` |
+| Wi-Fi (QCA6390) | `bsd/dev/redwood_wifi.c`, `redwood_lx.c`, `redwood_qmi.c`, `umi_mhi.c`, `umi_pcie.c`, … |
+| Filesystems (read-only APFS, ramfs, bindfs) | `bsd/miscfs/apfs/`, `bsd/miscfs/ramfs/`, `bsd/miscfs/bindfs/` |
+| Stub AMFI | `libkern/amfi/` |
+| Driver registration | `bsd/conf/files`, `libkern/conf/files` |
 
 ## Repository layout
 
 ```
-README.md                 this file (bilingual)
-docs/
-  ROADMAP.md              the TODO list, in more detail (bilingual)
-scripts/
-  loader-autoboot.patch   our loader changes: boot iOS from the phone's own `darwin` partition,
-                          partition identity check, post-run reset
-  build-loader.sh         build the patched loader and repack the boot image
-  build-image.py          build the `darwin` partition image (header + payload + system)
-  build-sideload.sh       build the app-placement test tool (static, mini libc)
-  deploy.md               how the image and the chain get onto the phone
 src/
-  kernel/                 the port's kernel file overlay — the drivers (touch, display, GPU,
-                          UFS, buttons, battery, Wi-Fi glue, …), the APFS/ramfs/bindfs work,
-                          the stub AMFI, minicrypto, and bsd/conf/files        [APSL 2.0]
-  loader/                 the XNUP loader source (base + this port's patch)   [MIT]
-  userland/               var_store.c — the persistence saver, adapted       [MIT]
-  sideload.c              the "install an app into /Applications" test tool   [MIT]
-  kernel-patches/         the scripts that applied the last kernel/loader changes (record only)
-NOTICE.md                 attribution and legal notes
-LICENSE                   the split licence: MIT for the port content, APSL-2.0 for
-                          src/kernel/ (see LICENSE.APSL)
+  kernel/          the port's kernel FILE OVERLAY: the drivers above and the XNU files changed for the
+                   port, at their XNU-tree paths — copied over an XNU tree to build     [APSL 2.0]
+  loader/          the XNUP loader: loader.c, build.sh, efi.h, mkpayload.py, mkidentity.py   [MIT]
+  userland/        var_store.c — packs /private/var into the flash at run end               [MIT]
+  sideload.c       the app-placement test tool (synthetic entry + bindfs)                     [MIT]
+  kernel-patches/  the scripts that applied this port's last kernel/loader changes (record)    [MIT]
+scripts/           build-image.py, deploy.md, loader-autoboot.patch, the jailbreak image
+                   builders (build-jb-image*.sh) and the language patch (patch-keep-lang.py)   [MIT]
+NOTICE.md          attribution and legal notes
+LICENSE, LICENSE.APSL
 ```
 
-## Building (outline)
+See [`src/README.md`](src/README.md) for what each part is and how it is applied.
 
-1. **XNU**: the base project's build (`xnu-build.sh` with the port's file overlay) — the port's
-   kernel sources live outside this repo (derived from Apple's XNU and the base project).
-2. **Loader**: `scripts/build-loader.sh` — compiles `xnuloader/loader.c` (base project + our patch)
-   with clang/lld and repacks the Android boot image.
-3. **System image**: build the iOS rootfs from Apple's IPSW with the base project's userland build,
-   then `scripts/build-image.py` wraps it: `[header][XNUP payload][system image]`.
-4. **Phone**: shrink `userdata` by 4 GiB (f2fs resize, keep Android data), carve a `darwin`
-   partition (GPT with CRCs), write the image, flash the chain to `boot_b`, set the active slot.
-   The steps are in `scripts/deploy.md`; the exact values this port used are in the commit log and
-   `docs/ROADMAP.md`.
+## Building
+
+1. **Kernel** — apply `src/kernel/` over an XNU 8796.121.2 tree (the base project's overlay
+   mechanism), configure the kona platform, build; the result is a 15.8 MB kernel image.
+2. **Loader** — `src/loader/build.sh` compiles `loader.c` with clang/lld; `scripts/pack-boot.py`
+   repacks an Android boot image: `kernel = gzip(BootShim + UEFI FD + XNUP payload) + DTB`.
+3. **System image** — build from Apple's own IPSW (16.5, 20F66, iPhone10,3): the base project's
+   `sysimage/unpack.sh` extracts the root filesystem, `select-system.py` keeps the files that fit
+   (and the languages — `scripts/patch-keep-lang.py` adds zh-Hans), `userland/build.sh` lays out the
+   volume, `mkapfs.py` writes `system.apfs`.
+4. **Payload** — `[kernel][small image][cmdline]` in one XNUP container (≤ 64 MiB, the loader's
+   payload limit).
+5. **Phone (development loop)** — `fastboot boot loader.img`, `oem ramdisk`, `stage system.apfs`,
+   `stage payload`, `oem run`; the loader stays in USB mode and serves the log. See
+   `scripts/deploy.md`.
+
+The boot arguments the port runs with are in `scripts/deploy.md` and the comments of the drivers
+(`fb_scan=1 fb_wcomb=1 touchscreen=1 gl=1 cpufreq=1 pon=8 pon_power_bit=1 pon_vol_bit=2 buttons=1
+wifi=1 …`).
+
+## Roadmap
+
+### 90 Hz (in progress)
+
+What is known:
+
+* The panel is **`j1u 42 02 0b`** (Mi 10S, command mode, DSC), identified from the Android kernel's
+  own log (`[xiaomi 42 02 0b cmd mode dsc dsi panel]`, `mi,panel-id 0x4a3200420201`).
+* The vendor's panel DTSI (`dsi-panel-j1u-42-02-0b-dsc-cmd.dtsi`) gives both modes:
+
+  | mode | framerate | v-back | v-front | note |
+  |---|---|---|---|---|
+  | 60 Hz | 60 | **560** | **600** | the large vertical blanking is what slows the scan down |
+  | 90 Hz | 90 | 8 | 4 | minimal blanking |
+
+  The **pixel clock is the same** in both modes, so **no DSI PLL change is needed**.
+* The switch is a DCS long write (`0x39`) of `2F 04` followed by `26 02`, sent in **HS mode**
+  (`dsi_hs_mode` in the DTSI).
+
+What is missing:
+
+1. **Deliver the command reliably.** The vendor's path is a **command DMA buffer** (the packet in
+   memory, its address in `DSI_DMA_CMD_OFFSET`, the display SMMU mapping it). This kernel currently
+   uses the controller's embedded/FIFO path; commands are transmitted (the `CMD_MODE_DMA_DONE`
+   interrupt fires) but the panel does not act. Next: set up a DMA command buffer (and the display
+   SMMU mapping for it), or use a location the display's SMMU already maps.
+2. **Send the pair** `2F 04` / `26 02` in HS mode.
+3. **Re-measure** the scan after the switch (`redwood_display_scan_start()` again — the code is
+   written and exercised through the `disp_cmd=` boot argument).
+4. **Verify**: UFOTest shows 90; no tearing (the frame-copy window uses the new timing); touch and
+   GPU unchanged.
+
+Debug tooling built for this (in `redwood_display.c`): boot arg `disp_dump=1` (print the INTF/DSI
+register state, repeated so the loader's console samples catch it) and `disp_cmd=2F04,2602` (send a
+list of DCS writes a few seconds into the boot, then re-measure the scan and print the rate).
+
+### Other open work
+
+* **Persistence restore** — the load at boot hangs; make `init`'s restore time-limited so a bad store
+  can never stop the boot.
+* **Android ⇄ iOS without a PC** — decode the `misc` BCB slot field (dump `misc` before/after a
+  `fastboot --set-active`), then write it from Android or from the loader.
+* **Full capacity display** — port the base project's block allocator, or fake the volume statistics.
+* **Third-party apps** — use the jailbreak's installer path (Sileo/apt) rather than bind-mounting a
+  bundle into `/Applications`.
+* **Phantom touches, Bluetooth, audio** — as above.
 
 ## Legal and attribution
 
-* **No Apple code or binaries** are distributed here. The iOS system image is Apple's copyrighted
-  software; each user builds it from an IPSW they obtained themselves, for their own device.
-* **No vendor firmware** is distributed. GPU zap shader, Wi-Fi firmware, etc. are extracted from
-  the user's own phone's Android partitions at build time.
+* **No Apple code, binaries, or system images** are distributed here. The iOS image is Apple's
+  copyrighted software; each user builds it from an IPSW they obtained themselves, for their own
+  device.
+* **No vendor firmware** is distributed. GPU zap shader, Wi-Fi firmware etc. are extracted from the
+  user's own phone at build time.
 * The kernel work is a derivative of **Apple's XNU** (APSL 2.0) and of the base project
-  **[DBC1349/hackios-mi10ultra](https://github.com/DBC1349/hackios-mi10ultra)**: the port's file
-  overlay, the loader and the userland build come from there. The Wi-Fi stack runs **Linux
-  ath11k** (GPL-2.0) through a FreeBSD LinuxKPI layer; this repository therefore carries no
-  kernel/Wi-Fi source, only notes and our own glue scripts.
-* **Reference port — [azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)**:
-  the driver approach followed it. In particular the QCA6390 Wi-Fi bring-up
-  (PCIe → MHI → QRTR → QMI/WLFW → ath11k on LinuxKPI, with its own `umi_*` glue and `lx_*`
-  layer) and the boot/storage workflow ideas come from reading that project's code; the sources
-  were audited before use and then adapted to this device (kona), with the port's own names
-  (`redwood_*`). Its Apple/vendor binaries are not redistributed here either.
+  **[DBC1349/hackios-mi10ultra](https://github.com/DBC1349/hackios-mi10ultra)**. The Wi-Fi stack also
+  carries **Linux ath11k / LinuxKPI** code (GPL-2.0); `src/kernel/` is published under the APSL, with
+  the licenses of the components it contains respected (see `NOTICE.md`).
+* **Reference implementation: [azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)** —
+  the Wi-Fi bring-up approach and the boot/storage workflow followed it (its sources were read,
+  audited, then adapted to this device).
 * This is a research/hobby project for hardware you own. Do not use it to circumvent Apple's
   software licensing.

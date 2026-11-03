@@ -974,7 +974,7 @@ static uint64_t sound_len;
 #define OTHER_CPU_HUNG          1001    /* ... the kernel stopped giving signs of life */
 #define START_SECONDS           5
 #define SILENCE_SECONDS         50
-#define NOTE_SECONDS            24      /* how long the kernel's progress is written down as it happens */
+#define NOTE_SECONDS            600      /* how long the kernel's progress is written down as it happens */
 
 static void wdt_pet(void);
 static int wdt_armed;
@@ -3656,7 +3656,7 @@ fb_command(char *cmd)
 			} else if (str_eq(var, "version")) {
 				fb_reply("OKAY", "0.5");
 			} else if (str_eq(var, "max-download-size")) {
-				fb_reply("OKAY", download_to_ramdisk ? "0xffffffff" : "0x03f00000");
+				fb_reply("OKAY", download_to_ramdisk ? "0xffffffff" : "0x20000000");
 			} else if (str_eq(var, "result")) {
 				fb_reply("OKAY", last_result);
 			} else if (str_eq(var, "screen") && SCREEN.base != 0) {
