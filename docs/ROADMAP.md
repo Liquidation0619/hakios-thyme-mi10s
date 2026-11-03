@@ -11,7 +11,7 @@ known, what was tried, and what the next step probably is. 下面是遗留的未
 * The kernel's AMFI is a stub (`xnu/files/libkern/amfi/miniamfi.c`): unsigned code runs, entitlements
   are read from the code signature when present.
 * A test app was placed into `/Applications` at boot: an APFS **synthetic entry**
-  (`kern.apfs_synthetic`) + **bindfs** mount of the bundle from `/redwood/apps`. The tool
+  (`kern.apfs_synthetic`) + **bindfs** mount of the bundle from `/thyme/apps`. The tool
   (`src/sideload.c`) succeeded — `sideload: Hello.app -> /Applications/Hello.app` — but **the boot
   then hangs** (no iOS), and no log is produced (the kernel/init never reach the return path).
 * Erasing the persistence store did not help; disabling the `sideload` line made the boot work
@@ -39,7 +39,7 @@ known, what was tried, and what the next step probably is. 下面是遗留的未
 ## 2. Persistence restore — 持久化恢复
 
 **State / 现状**
-* **Save works**: at run end the kernel asks `var_store` (`kern.redwood.var_save`), the saver packs
+* **Save works**: at run end the kernel asks `var_store` (`kern.thyme.var_save`), the saver packs
   `/private/var` and writes it through `/dev/rufs_darwin`; the loader verifies each write.
   Verified: `ufs: 3 writes into darwin, 28672 bytes, read back the same; 0 refused`, and the saver's
   own report `slot 0: generation 1, 209 entries, 19336 bytes, crc 5814710e`.

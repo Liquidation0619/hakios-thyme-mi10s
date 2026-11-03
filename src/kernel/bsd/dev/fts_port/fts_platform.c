@@ -1,7 +1,7 @@
 /*
  * fts_platform.c - the bridge between the ported ST driver and this machine's bit-banged bus.
  *
- * The ported library talks i2c_msg; redwood_goodix.c owns the pins. This file is the only place
+ * The ported library talks i2c_msg; thyme_goodix.c owns the pins. This file is the only place
  * the two meet, and it keeps the Linux-shaped headers out of the driver file.
  */
 #include "compat.h"
@@ -12,7 +12,7 @@
 #include "ftsFrame.h"
 #include "ftsTool.h"
 
-/* implemented in redwood_goodix.c, layout-compatible with struct i2c_msg */
+/* implemented in thyme_goodix.c, layout-compatible with struct i2c_msg */
 struct fts_port_msg {
 	unsigned short addr;
 	unsigned short flags;
@@ -20,9 +20,9 @@ struct fts_port_msg {
 	unsigned char *buf;
 };
 
-extern int redwood_fts_transfer(struct fts_port_msg *msgs, int num);
-extern void redwood_fts_gpio_set(int gpio, int value);
-extern void redwood_fb_blink(int times);
+extern int thyme_fts_transfer(struct fts_port_msg *msgs, int num);
+extern void thyme_fts_gpio_set(int gpio, int value);
+extern void thyme_fb_blink(int times);
 
 extern SysInfo systemInfo;
 
@@ -33,13 +33,13 @@ int
 fts_platform_i2c_transfer(struct i2c_adapter *adapter, struct i2c_msg *msgs, int num)
 {
 	(void)adapter;
-	return redwood_fts_transfer((struct fts_port_msg *)msgs, num);
+	return thyme_fts_transfer((struct fts_port_msg *)msgs, num);
 }
 
 void
 fts_platform_gpio_set(int gpio, int value)
 {
-	redwood_fts_gpio_set(gpio, value);
+	thyme_fts_gpio_set(gpio, value);
 }
 
 static void

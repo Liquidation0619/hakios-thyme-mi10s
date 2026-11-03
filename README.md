@@ -96,11 +96,11 @@ this repository — see [Legal](#legal-and-attribution).
 
 | Part | Files |
 |---|---|
-| Touch | `bsd/dev/redwood_st_touch.c`, `redwood_input.c`, `fts_port/` |
-| Display / framebuffer sync | `bsd/dev/redwood_display.c`, `iokit/Kernel/MiniIOMobileFramebuffer.cpp` |
-| GPU | `bsd/dev/redwood_adreno.c`, `iokit/Kernel/RedwoodGPU.cpp`, `MiniIOSurface.cpp` |
-| Storage (UFS + the `darwin` store) | `bsd/dev/redwood_ufs.c`, `redwood_ufshc.c` |
-| Wi-Fi (QCA6390) | `bsd/dev/redwood_wifi.c`, `redwood_lx.c`, `redwood_qmi.c`, `umi_mhi.c`, `umi_pcie.c`, … |
+| Touch | `bsd/dev/thyme_st_touch.c`, `thyme_input.c`, `fts_port/` |
+| Display / framebuffer sync | `bsd/dev/thyme_display.c`, `iokit/Kernel/MiniIOMobileFramebuffer.cpp` |
+| GPU | `bsd/dev/thyme_adreno.c`, `iokit/Kernel/ThymeGPU.cpp`, `MiniIOSurface.cpp` |
+| Storage (UFS + the `darwin` store) | `bsd/dev/thyme_ufs.c`, `thyme_ufshc.c` |
+| Wi-Fi (QCA6390) | `bsd/dev/thyme_wifi.c`, `thyme_lx.c`, `thyme_qmi.c`, `umi_mhi.c`, `umi_pcie.c`, … |
 | Filesystems (read-only APFS, ramfs, bindfs) | `bsd/miscfs/apfs/`, `bsd/miscfs/ramfs/`, `bsd/miscfs/bindfs/` |
 | Stub AMFI | `libkern/amfi/` |
 | Driver registration | `bsd/conf/files`, `libkern/conf/files` |
@@ -170,12 +170,12 @@ What is missing:
    interrupt fires) but the panel does not act. Next: set up a DMA command buffer (and the display
    SMMU mapping for it), or use a location the display's SMMU already maps.
 2. **Send the pair** `2F 04` / `26 02` in HS mode.
-3. **Re-measure** the scan after the switch (`redwood_display_scan_start()` again — the code is
+3. **Re-measure** the scan after the switch (`thyme_display_scan_start()` again — the code is
    written and exercised through the `disp_cmd=` boot argument).
 4. **Verify**: UFOTest shows 90; no tearing (the frame-copy window uses the new timing); touch and
    GPU unchanged.
 
-Debug tooling built for this (in `redwood_display.c`): boot arg `disp_dump=1` (print the INTF/DSI
+Debug tooling built for this (in `thyme_display.c`): boot arg `disp_dump=1` (print the INTF/DSI
 register state, repeated so the loader's console samples catch it) and `disp_cmd=2F04,2602` (send a
 list of DCS writes a few seconds into the boot, then re-measure the scan and print the rate).
 
@@ -197,10 +197,16 @@ list of DCS writes a few seconds into the boot, then re-measure the scan and pri
   device.
 * **No vendor firmware** is distributed. GPU zap shader, Wi-Fi firmware etc. are extracted from the
   user's own phone at build time.
-* The kernel work is a derivative of **Apple's XNU** (APSL 2.0) and of the base project
-  **[DBC1349/hackios-mi10ultra](https://github.com/DBC1349/hackios-mi10ultra)**. The Wi-Fi stack also
-  carries **Linux ath11k / LinuxKPI** code (GPL-2.0); `src/kernel/` is published under the APSL, with
-  the licenses of the components it contains respected (see `NOTICE.md`).
+* The kernel work is a derivative of **Apple's XNU** (APSL 2.0), of the base project
+  **[DBC1349/hackios-mi10ultra](https://github.com/DBC1349/hackios-mi10ultra)** and of the
+  **mainline HakiOS** project. The Wi-Fi stack also carries **Linux ath11k / LinuxKPI** code
+  (GPL-2.0); `src/kernel/` is published under the APSL, with the licenses of the components it
+  contains respected (see `NOTICE.md`).
+* **Mainline HakiOS — [oosexgang/hakios-xnu-kernel](https://github.com/oosexgang/hakios-xnu-kernel)**:
+  the project HakiOS has grown into (drivers by subsystem, Metal-based CoreAnimation, the 120 Hz
+  animation work, the UEFI and device packages, its documentation). This port is based on the
+  original HackiOS/Mi 10 Ultra tree and follows the mainline where it applies; its documentation and
+  its Metal/CoreAnimation work are the reference for this port's next steps.
 * **Reference implementation: [azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)** —
   the Wi-Fi bring-up approach and the boot/storage workflow followed it (its sources were read,
   audited, then adapted to this device).

@@ -1,7 +1,7 @@
 /*
- * sideload: put the apps in /redwood/apps into /Applications, which is on the read-only root volume.
+ * sideload: put the apps in /thyme/apps into /Applications, which is on the read-only root volume.
  *
- * Runs from /redwood/etc/rc as root, before launchd starts, so Launch Services' scan of
+ * Runs from /thyme/etc/rc as root, before launchd starts, so Launch Services' scan of
  * /Applications finds them. Each app gets two things:
  *   - a synthetic entry of the root APFS volume at /Applications/NAME.app (kern.apfs_synthetic):
  *     a directory that is not on the volume, which is a mount point;
@@ -10,7 +10,7 @@
  */
 #include "mini.h"
 
-#define APPS  "/redwood/apps"
+#define APPS  "/thyme/apps"
 #define DEST  "/Applications"
 
 static void

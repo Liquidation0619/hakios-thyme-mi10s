@@ -301,7 +301,7 @@
 +			/* An unknown display is still a Qualcomm phone, not QEMU ramfb: kona and yupik
 +			 * share the platform constants, only the framebuffer base differs. */
 +			static struct platform plat_unknown;
-+			plat_unknown = platform_redwood;
++			plat_unknown = platform_thyme;
 +			plat_unknown.name = "unknown-kona";
 +			plat_unknown.fb_base = SCREEN.base;
 +			PLAT = &plat_unknown;

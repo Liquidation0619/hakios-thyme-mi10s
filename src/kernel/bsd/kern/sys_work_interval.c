@@ -269,7 +269,7 @@ work_interval_ctl(__unused proc_t p, struct work_interval_ctl_args *uap,
 	case 7:
 	case 8:
 		/*
-		 * (redwood) Not in the open source: what os_workgroup_interval_start(), _update() and
+		 * (thyme) Not in the open source: what os_workgroup_interval_start(), _update() and
 		 * _finish() of iOS send, for the performance controller, which is not here either.
 		 * CoreAudio does it in every I/O cycle and logs an error each time it is refused: fifty
 		 * lines a second from the audio server's real-time thread. For its threads, and only

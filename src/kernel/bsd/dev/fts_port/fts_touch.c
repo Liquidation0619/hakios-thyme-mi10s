@@ -12,14 +12,14 @@
  *     event[7]      [4:0] events still queued
  *
  * The panel reports screen coordinates directly (the device tree gives x-max 1080, y-max 2340),
- * so the values go to redwood_touch_post() unchanged.
+ * so the values go to thyme_touch_post() unchanged.
  */
 #include "compat.h"
 #include "ftsSoftware.h"
 #include "ftsCore.h"
 #include "ftsIO.h"
 
-#include <sys/redwood_input.h>
+#include <sys/thyme_input.h>
 #include <kern/thread_call.h>
 #include <kern/clock.h>
 
@@ -46,13 +46,13 @@ fts_post_event(const uint8_t *event)
 
 	switch (event[0]) {
 	case EVT_ID_ENTER_POINT:
-		type = REDWOOD_TOUCH_DOWN;
+		type = THYME_TOUCH_DOWN;
 		break;
 	case EVT_ID_MOTION_POINT:
-		type = REDWOOD_TOUCH_MOVE;
+		type = THYME_TOUCH_MOVE;
 		break;
 	case EVT_ID_LEAVE_POINT:
-		type = REDWOOD_TOUCH_UP;
+		type = THYME_TOUCH_UP;
 		break;
 	default:
 		return;                 /* status and error events are not touches */
@@ -70,7 +70,7 @@ fts_post_event(const uint8_t *event)
 	}
 	pr_info("touch: type %u id %u x %u y %u\n", type, finger, x, y);
 	fts_event_count++;
-	redwood_touch_post(type, finger, x, y);
+	thyme_touch_post(type, finger, x, y);
 }
 
 

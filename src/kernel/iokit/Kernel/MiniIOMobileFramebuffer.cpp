@@ -28,7 +28,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 
-extern "C" vm_offset_t redwood_display_panel_map(vm_offset_t phys_addr, vm_size_t size);
+extern "C" vm_offset_t thyme_display_panel_map(vm_offset_t phys_addr, vm_size_t size);
 extern "C" {
 #include <console/video_console.h>
 extern struct vc_info vinfo;            /* the boot framebuffer, as the text console knows it */
@@ -38,19 +38,19 @@ extern struct vc_info vinfo;            /* the boot framebuffer, as the text con
 
 #include "MiniIOSurface.h"
 
-extern "C" void redwood_tl(const char * format, ...) __printflike(1, 2);
+extern "C" void thyme_tl(const char * format, ...) __printflike(1, 2);
 /* the panel's scan (bsd/dev/hakios.display.c; sys/hakios.display.h, which iokit/ does not see) */
-struct redwood_display_scan {
+struct thyme_display_scan {
 	int ok;
 	uint32_t lines, shown, millihz;
 	uint64_t line_ns, frame_ns;
 };
-extern "C" int redwood_display_scan_start(void);
-extern "C" const struct redwood_display_scan * redwood_display_scan(void);
-extern "C" int redwood_display_wait_lines(uint32_t first, uint32_t last, uint64_t limit_ns);
-extern "C" uint64_t redwood_display_next_frame_ns(void);
-extern "C" int redwood_display_command_mode(void);
-extern "C" int redwood_display_wait_copy(uint64_t copy_ns, uint64_t limit_ns);
+extern "C" int thyme_display_scan_start(void);
+extern "C" const struct thyme_display_scan * thyme_display_scan(void);
+extern "C" int thyme_display_wait_lines(uint32_t first, uint32_t last, uint64_t limit_ns);
+extern "C" uint64_t thyme_display_next_frame_ns(void);
+extern "C" int thyme_display_command_mode(void);
+extern "C" int thyme_display_wait_copy(uint64_t copy_ns, uint64_t limit_ns);
 
 /* IOConnectCallMethod selectors of the framebuffer user client (iOS 16.5) */
 enum {
@@ -482,14 +482,14 @@ IOMobileFramebuffer::start(IOService * provider)
 			phys = 0;
 		}
 		if (phys == 0) {
-			redwood_tl("fb: panel copies stay on the loader's mapping (fb_wcomb=1 to try write-combining)\n");
+			thyme_tl("fb: panel copies stay on the loader's mapping (fb_wcomb=1 to try write-combining)\n");
 			goto alias_done;
 		}
 		/* the loader's own mapping is device memory, so a copy into it runs at bus speed;
 		 * mapping it again write-combining lets the stores go out in whole cache lines. */
-		fPanelAlias = redwood_display_panel_map((vm_offset_t) phys,
+		fPanelAlias = thyme_display_panel_map((vm_offset_t) phys,
 		    (vm_size_t) ((uint64_t) vinfo.v_rowbytes * vinfo.v_height));
-		redwood_tl("fb: panel memory %#llx, write-combining alias %#lx%s\n",
+		thyme_tl("fb: panel memory %#llx, write-combining alias %#lx%s\n",
 		    (unsigned long long) phys, (unsigned long) fPanelAlias,
 		    fPanelAlias ? "" : " (not made: copies stay slow)");
 alias_done:;
@@ -552,15 +552,15 @@ alias_done:;
 	/* for who draws with the GPU (userland/src/eagl.c): a frame need not be waited for before it is handed over */
 	setProperty("HakiosWaitsForGPU", kOSBooleanTrue);
 	/* the panel's scan, if it can be read: its rate is then the one published, unless fb_hz= is given */
-	if (redwood_display_scan_start()) {
+	if (thyme_display_scan_start()) {
 		uint32_t hz;
-		const struct redwood_display_scan * scan = redwood_display_scan();
+		const struct thyme_display_scan * scan = thyme_display_scan();
 
 		if (!PE_parse_boot_argn("fb_hz", &hz, sizeof(hz)) && scan != NULL) {
 			gScanHz = (scan->millihz + 500) / 1000;
 		}
 		IOLog("MiniIOMobileFramebuffer: frames follow the panel's scan, at %u a second\n", refreshHz());
-		if (redwood_display_command_mode()) {
+		if (thyme_display_command_mode()) {
 			uint64_t bytes = (uint64_t)fRowBytes * fPanelHeight;
 			if (bytes <= 64 * 1024 * 1024)
 				fComposeMemory = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task,
@@ -568,8 +568,8 @@ alias_done:;
 			if (fComposeMemory != NULL) {
 				fComposeBase = (uint8_t *)fComposeMemory->getBytesNoCopy();
 				memcpy(fComposeBase, fBase, bytes);
-				redwood_tl("display: command-mode staging buffer: %llu bytes\n", bytes);
-			} else redwood_tl("display: no staging buffer; command-mode presentation remains unsynchronized\n");
+				thyme_tl("display: command-mode staging buffer: %llu bytes\n", bytes);
+			} else thyme_tl("display: no staging buffer; command-mode presentation remains unsynchronized\n");
 		}
 	}
 	publishModes();
@@ -964,7 +964,7 @@ IOMobileFramebuffer::present(const uint8_t * swap)
 	nanoseconds_to_absolutetime(FRAME_PAUSE * NSEC_PER_MSEC, &pause);
 	clock_interval_to_deadline(SWAP_HELD_MS, kMillisecondScale, &deadline);
 	if (gTouchLat) {
-		redwood_tl("tl: s %u at %llu\n", swapWord(swap, SWAP_ID), micros(now));
+		thyme_tl("tl: s %u at %llu\n", swapWord(swap, SWAP_ID), micros(now));
 	}
 	IOLockLock(fSwapLock);
 	fStatSwapsLate += fSwapTime != 0 && now - fSwapTime > period && now - fSwapTime < pause;
@@ -996,7 +996,7 @@ IOMobileFramebuffer::present(const uint8_t * swap)
 	while (fComposeBase != NULL && fCompletedTicket < ticket) {
 		if (IOLockSleepDeadline(fSwapLock, &fCompletedTicket, deadline, THREAD_UNINT) == THREAD_TIMED_OUT &&
 		    fCompletedTicket < ticket) {
-			redwood_tl("display: staged swap completion timed out\n");
+			thyme_tl("display: staged swap completion timed out\n");
 			break;
 		}
 	}
@@ -1043,9 +1043,9 @@ IOMobileFramebuffer::copier(void)
 		IOLockUnlock(fCopyLock);
 
 		uint64_t wait_start = mach_absolute_time(), waited;
-		const struct redwood_display_scan * scan = redwood_display_scan();
+		const struct thyme_display_scan * scan = thyme_display_scan();
 		fStatScanWaits++;
-		if (scan != NULL && redwood_display_wait_copy(fCopyNs, scan->frame_ns * 3 / 2)) {
+		if (scan != NULL && thyme_display_wait_copy(fCopyNs, scan->frame_ns * 3 / 2)) {
 			uint64_t copy_start = mach_absolute_time(), copy_ns;
 			memcpy(fPanelAlias ? (void *) fPanelAlias : (void *) fBase, fComposeBase,
 			    (size_t) fRowBytes * fPanelHeight);
@@ -1056,12 +1056,12 @@ IOMobileFramebuffer::copier(void)
 			fStatCopyNs += copy_ns;
 			fCopyNs = copy_ns > fCopyNs ? copy_ns : (fCopyNs * 31 + copy_ns) / 32;
 			if (fSwapsShown < 5)
-				redwood_tl("display: staged frame %u copied in %llu us\n", fSwapsShown, copy_ns / 1000);
+				thyme_tl("display: staged frame %u copied in %llu us\n", fSwapsShown, copy_ns / 1000);
 		} else {
 			/* Keep the previous complete picture if this frame misses its window. */
 			fStatScanMissed++;
 			fCopyNs = fCopyNs > 4000000 ? fCopyNs * 7 / 8 : fCopyNs;
-			if (fSwapsShown < 5) redwood_tl("display: staged frame %u missed its idle window\n", fSwapsShown);
+			if (fSwapsShown < 5) thyme_tl("display: staged frame %u missed its idle window\n", fSwapsShown);
 		}
 
 		IOLockLock(fCopyLock);
@@ -1126,7 +1126,7 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 	}
 	fStatWaiting += mach_absolute_time() - began;
 	began = ready = mach_absolute_time();
-	if (redwood_display_scan() != NULL && !redwood_display_command_mode()) {
+	if (thyme_display_scan() != NULL && !thyme_display_command_mode()) {
 		/*
 		 * Where the copy may start (fb_scan): every band of rows (fThreads of them, drawn side by side, each top
 		 * to bottom in about fDrawNs) has to stay behind the scan in this refresh -- written after the scan has
@@ -1136,7 +1136,7 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 		 *   from  max(shown (n-1)/n, shown - D/line) and   up to  lines + shown/n - D/line.
 		 * Waited for, a frame and a half at most: a frame is never held longer than that for it.
 		 */
-		const struct redwood_display_scan * scan = redwood_display_scan();
+		const struct thyme_display_scan * scan = thyme_display_scan();
 		uint64_t d = fDrawNs != 0 ? fDrawNs : scan->frame_ns / 3, dl = d / scan->line_ns;
 		uint32_t n = fThreads != 0 ? fThreads : 1, S = scan->shown, T = scan->lines;
 		uint64_t lo = (uint64_t) S * (n - 1) / n, hi = (uint64_t) T + S / n;
@@ -1152,11 +1152,11 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 			hi = T;
 		}
 		fStatScanWaits++;
-		if (!redwood_display_wait_lines((uint32_t) lo, (uint32_t) hi, scan->frame_ns * 3 / 2)) {
+		if (!thyme_display_wait_lines((uint32_t) lo, (uint32_t) hi, scan->frame_ns * 3 / 2)) {
 			fStatScanMissed++;
 		}
 		fBeat = began = mach_absolute_time();
-	} else if (!redwood_display_command_mode() && gOnTheBeat) {
+	} else if (!thyme_display_command_mode() && gOnTheBeat) {
 		uint64_t period, aim, next;
 
 		nanoseconds_to_absolutetime(NSEC_PER_SEC / refreshHz(), &period);
@@ -1292,7 +1292,7 @@ IOMobileFramebuffer::show(const uint8_t * swap, MiniIOSurface ** surfaces)
 	}
 	fSwapsShown++;
 	if (gTouchLat) {
-		redwood_tl("tl: v %u ready %llu shown %llu done %llu\n", swapWord(swap, SWAP_ID), micros(ready), micros(shown),
+		thyme_tl("tl: v %u ready %llu shown %llu done %llu\n", swapWord(swap, SWAP_ID), micros(ready), micros(shown),
 		    micros(drawn));
 	}
 	if (layers != fLayersShown) {
@@ -1509,11 +1509,11 @@ IOMobileFramebufferUserClient::armVSync(void)
 
 	/* one refresh after the last, not after whenever we got round to this: the rate does not drift */
 	nanoseconds_to_absolutetime(NSEC_PER_SEC / refreshHz(), &period);
-	if (redwood_display_scan() != NULL) {
+	if (thyme_display_scan() != NULL) {
 		/* fb_scan: when the panel's next frame begins, by its scan -- locked to it, never drifting */
 		uint64_t ahead;
 
-		nanoseconds_to_absolutetime(redwood_display_next_frame_ns(), &ahead);
+		nanoseconds_to_absolutetime(thyme_display_next_frame_ns(), &ahead);
 		fVSyncTime = now + (ahead != 0 ? ahead : period);
 		thread_call_enter_delayed(fVSyncCall, fVSyncTime);
 		return;
@@ -1635,7 +1635,7 @@ IOMobileFramebufferUserClient::externalMethod(uint32_t selector, IOExternalMetho
 
 	case kFBMethodSwapWait:                         /* a swap is on the screen as soon as it is made */
 		if (gTouchLat) {
-			redwood_tl("tl: w %llu %#llx %#llx at %llu\n", args->scalarInputCount > 0 ? in[0] : 0,
+			thyme_tl("tl: w %llu %#llx %#llx at %llu\n", args->scalarInputCount > 0 ? in[0] : 0,
 			    args->scalarInputCount > 1 ? in[1] : 0, args->scalarInputCount > 2 ? in[2] : 0, micros(mach_absolute_time()));
 		}
 		return kIOReturnSuccess;
@@ -1756,7 +1756,7 @@ publishDisplayNode(void)
 		data = OSData::withBytes("display-subsystem", sizeof("display-subsystem"));
 		props->setObject("device_type", data);
 		OSSafeReleaseNULL(data);
-		data = OSData::withBytes("redwood,framebuffer", sizeof("redwood,framebuffer"));
+		data = OSData::withBytes("thyme,framebuffer", sizeof("thyme,framebuffer"));
 		props->setObject("compatible", data);
 		OSSafeReleaseNULL(data);
 		data = OSData::withBytes("disp0", sizeof("disp0"));

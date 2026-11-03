@@ -684,7 +684,7 @@ work_interval_get_priority(thread_t thread)
 }
 
 /*
- * (redwood) What kind of work the thread's work interval is for: one of WORK_INTERVAL_TYPE_*,
+ * (thyme) What kind of work the thread's work interval is for: one of WORK_INTERVAL_TYPE_*,
  * or WORK_INTERVAL_TYPE_LAST for a thread that has joined none.
  */
 uint32_t

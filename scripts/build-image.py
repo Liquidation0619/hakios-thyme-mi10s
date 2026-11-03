@@ -9,7 +9,7 @@ arguments for this run.
 
 Inputs (override with environment variables):
   KERNEL   self-built XNU Mach-O for kona           default: $IOS/thyme/kernel-stage.bin
-  SMALL    the small image (root.apfs: /redwood)    default: $IOS/thyme/root.apfs
+  SMALL    the small image (root.apfs: /thyme)    default: $IOS/thyme/root.apfs
   SYSTEM   the big system image (root, md0)         default: $IOS/thyme/system.apfs
   OUT      where the image is written               default: $IOS/thyme/ios-storage/ios.img
   CMDLINE  kernel command line (see below)          default: this port's working set

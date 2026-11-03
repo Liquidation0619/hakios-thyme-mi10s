@@ -6,7 +6,7 @@
 #   - keep everything that makes it work: usr/bin, usr/lib, usr/libexec, Applications (Sileo),
 #     Library, etc, terminfo (xterm only), and the set-uid bits
 # Everything else follows the user's build-jb-image.sh: the patched init grafts the prefix from
-# /redwood/jb, bin/binunion unions /redwood/jb-bin over /bin.
+# /thyme/jb, bin/binunion unions /thyme/jb-bin over /bin.
 set -o pipefail
 exec 2>&1
 
@@ -44,12 +44,12 @@ for c in chmod cp mkdir mv rm; do
 done
 echo "   prefix now $(du -sh "$TREE/jb" | cut -f1)"
 
-echo "== init (prefix at /redwood/jb) and binunion"
+echo "== init (prefix at /thyme/jb) and binunion"
 cp /mnt/d/Liquid/ios/.recon/init-jb "$TREE/sbin/init"
 cp /mnt/d/Liquid/ios/.recon/binunion "$TREE/bin/binunion"
 chmod 755 "$TREE/sbin/init" "$TREE/bin/binunion"
-if ! grep -a -q '/redwood/jb' "$TREE/sbin/init"; then
-    echo "the init does not know /redwood/jb" >&2
+if ! grep -a -q '/thyme/jb' "$TREE/sbin/init"; then
+    echo "the init does not know /thyme/jb" >&2
     exit 1
 fi
 
@@ -67,7 +67,7 @@ for f in Applications/Sileo.app/giveMeRoot usr/bin/sudo usr/bin/login usr/bin/su
 done
 
 echo "== image"
-python3 "$TOOLS/mkapfs.py" -o "$OUT" -z --plain fw redwood="$TREE" 2>&1 | tail -2
+python3 "$TOOLS/mkapfs.py" -o "$OUT" -z --plain fw thyme="$TREE" 2>&1 | tail -2
 ls -l "$OUT"
 echo
 echo "   kernel + this image = $(( $(stat -c%s /mnt/d/Liquid/ios/thyme/kernel-stage.bin) + $(stat -c%s "$OUT") )) bytes (limit 67108864)"

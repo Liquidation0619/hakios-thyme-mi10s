@@ -147,12 +147,12 @@
 #include <net/if_ether.h>               /* for ether_family_init() */
 #include <net/if_gif.h>                 /* for gif_init() */
 #include <miscfs/devfs/devfsdefs.h>     /* for devfs_kernel_mount() */
-#include <sys/redwood_input.h>
-#include <sys/redwood_audio.h>
-#include <sys/redwood_virtio_blk.h>
-#include <sys/redwood_sparse.h>
+#include <sys/thyme_input.h>
+#include <sys/thyme_audio.h>
+#include <sys/thyme_virtio_blk.h>
+#include <sys/thyme_sparse.h>
 #if APFS
-#include <sys/redwood_apfs_check.h>
+#include <sys/thyme_apfs_check.h>
 #endif
 #include <vm/vm_kern.h>                 /* for kmem_suballoc() */
 #include <sys/proc_uuid_policy.h>       /* proc_uuid_policy_init() */
@@ -983,13 +983,13 @@ bsd_init(void)
 
 		bsd_init_kprintf("calling devfs_kernel_mount\n");
 		devfs_kernel_mount(mounthere);
-		redwood_input_init();           /* /dev/redwood-touch */
-		redwood_audio_init();           /* /dev/redwood-audio */
-		redwood_virtio_blk_init();      /* /dev/rvblk0, a disk image of the host (QEMU) */
-		redwood_sparse_init();          /* /dev/rsp0, part of an image too big to hold */
+		thyme_input_init();           /* /dev/thyme-touch */
+		thyme_audio_init();           /* /dev/thyme-audio */
+		thyme_virtio_blk_init();      /* /dev/rvblk0, a disk image of the host (QEMU) */
+		thyme_sparse_init();          /* /dev/rsp0, part of an image too big to hold */
 #if APFS
 		/* mounts and walks /dev/rvblk0 once userland has /private/var up */
-		redwood_apfs_check_init();
+		thyme_apfs_check_init();
 #endif
 	}
 #endif /* DEVFS */

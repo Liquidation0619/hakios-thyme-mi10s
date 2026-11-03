@@ -19,7 +19,7 @@ for old, new in subs:
 open(p, "w", newline="").write(s)
 
 # kernel
-p = "/opt/hackios/xnu-src/xnu-8796.121.2/bsd/dev/redwood_ufs.c"
+p = "/opt/hackios/xnu-src/xnu-8796.121.2/bsd/dev/thyme_ufs.c"
 s = open(p, newline="").read()
 subs = [
     ("#define UFS_DARWIN_FIRST   7603968ULL", "#define UFS_DARWIN_FIRST   60831744ULL"),

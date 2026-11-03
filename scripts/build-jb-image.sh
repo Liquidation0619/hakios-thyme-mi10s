@@ -1,11 +1,11 @@
 #!/bin/bash
-# Build the small image (root.apfs, the volume mounted on /redwood) with the rootless jailbreak
-# prefix in it: Procursus + Sileo + ElleKit from the base project's tools/mk-jb.sh, at /redwood/jb.
+# Build the small image (root.apfs, the volume mounted on /thyme) with the rootless jailbreak
+# prefix in it: Procursus + Sileo + ElleKit from the base project's tools/mk-jb.sh, at /thyme/jb.
 #
 # Changes against the port's plain small image (build-image-perms-linux.sh):
 #   * sbin/init is the binary patched by .recon/init-patch.py: it grafts the prefix from
-#     /redwood/jb (the base init looks at /jb and /private/preboot/jb only);
-#   * bin/binunion is a new tool: it binds /redwood/jb-bin over /bin as a union, so Sileo's
+#     /thyme/jb (the base init looks at /jb and /private/preboot/jb only);
+#   * bin/binunion is a new tool: it binds /thyme/jb-bin over /bin as a union, so Sileo's
 #     /bin/mv, /bin/cp, /bin/rm, /bin/mkdir, /bin/chmod exist;
 #   * jb/ is the prefix itself (real files, read only in the image; init links it into /private/var/jb);
 #   * jb-bin/ holds those five names as links into the prefix.
@@ -34,12 +34,12 @@ for c in chmod cp mkdir mv rm; do
 done
 echo "   $(du -sh "$TREE/jb" | cut -f1), $(find "$TREE/jb" | wc -l) entries"
 
-echo "== init (prefix at /redwood/jb) and binunion"
+echo "== init (prefix at /thyme/jb) and binunion"
 cp /mnt/d/Liquid/ios/.recon/init-jb "$TREE/sbin/init"
 cp /mnt/d/Liquid/ios/.recon/binunion "$TREE/bin/binunion"
 chmod 755 "$TREE/sbin/init" "$TREE/bin/binunion"
-if ! grep -a -q '/redwood/jb' "$TREE/sbin/init"; then
-	echo "build-jb-image: the init in the tree does not know /redwood/jb" >&2
+if ! grep -a -q '/thyme/jb' "$TREE/sbin/init"; then
+	echo "build-jb-image: the init in the tree does not know /thyme/jb" >&2
 	exit 1
 fi
 
@@ -64,7 +64,7 @@ done
 
 echo
 echo "== building the image from it"
-python3 "$TOOLS/mkapfs.py" -o /root/root-jb.apfs -z --plain fw redwood="$TREE" 2>&1 | tail -3
+python3 "$TOOLS/mkapfs.py" -o /root/root-jb.apfs -z --plain fw thyme="$TREE" 2>&1 | tail -3
 [ -f /root/root-jb.apfs ] || { echo "build-jb-image: mkapfs wrote nothing" >&2; exit 1; }
 cp /root/root-jb.apfs /mnt/d/Liquid/ios/thyme/root-jb.apfs
 ls -l /mnt/d/Liquid/ios/thyme/root-jb.apfs

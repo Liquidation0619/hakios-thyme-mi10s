@@ -237,7 +237,7 @@ extern vm_offset_t other_percpu_base(int cpu_number);
  * @param name          the per-CPU variable name
  */
 /*
- * (redwood) All of the arithmetic is on integers here. As Apple wrote it, the end was a pointer
+ * (thyme) All of the arithmetic is on integers here. As Apple wrote it, the end was a pointer
  * computed from the start, and a compiler may then take "start <= start + n" for "n >= 0":
  * with one processor start is VM_MAX_KERNEL_ADDRESS and end is 0, n looks positive, and the
  * loop that must not run at all runs once on memory that does not exist (clang 18+ does this;

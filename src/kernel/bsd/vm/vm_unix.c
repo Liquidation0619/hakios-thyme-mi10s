@@ -2539,7 +2539,7 @@ after_root_check:
 #endif
 			error = vnode_lookup(PREBOOT_CRYPTEX_PATH, 0, &preboot_vp, vfs_context_current());
 			/*
-			 * (redwood) Or a volume of its own mounted on a directory right inside it: iOS
+			 * (thyme) Or a volume of its own mounted on a directory right inside it: iOS
 			 * grafts each cryptex image into the Preboot volume (graftdmg), so its files are
 			 * that volume's; this port mounts the image there as it is (bsd/miscfs/apfs), a
 			 * mount of its own whose covered directory is Preboot's Cryptexes/<name>.

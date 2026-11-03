@@ -568,9 +568,9 @@ static const struct platform platform_qemu_virt = {
 	.timeout_scale = 20,
 };
 
-static const struct platform platform_redwood = {
+static const struct platform platform_thyme = {
 	/* io_base must be non-zero: XNU treats a zero SoC base as "no SoC" and skips clock setup. */
-	.name = "redwood", .io_base = 0x00400000, .io_size = 0x3FC00000,
+	.name = "thyme", .io_base = 0x00400000, .io_size = 0x3FC00000,
 	.gic_dist = 0x17A00000, .gic_redist = 0x17A60000, .uart = 0, .log_other_cpu = 1,
 	.cores = 8, .core_shift = 8,
 	/*
@@ -588,7 +588,7 @@ static const struct platform platform_redwood = {
  * where each value comes from); a display that matches none is QEMU's ramfb.
  */
 static const struct platform *const platforms[] = {
-	&platform_redwood,
+	&platform_thyme,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -1485,13 +1485,13 @@ ufs_survey(void)
  * resident, and this loader already serves the kernel from core 0 while the kernel runs on another
  * (the battery). So the kernel asks for blocks through a page both can see, and core 0 reads them
  * with that driver's ReadBlocks into a buffer both can see. The kernel's side is
- * bsd/dev/redwood_ufs.c; it gets the page's address as ufs_shared_pa= on its command line.
+ * bsd/dev/thyme_ufs.c; it gets the page's address as ufs_shared_pa= on its command line.
  *
  * Reads, and -- with ufs_write=1 on the command line -- writes into one partition and nowhere
  * else: the port's own darwin, proved by its GPT entry (name, both GUIDs, first and last LBA, its
  * logical unit), and in it only past everything the build writes from the computer, so that no
  * answer to the kernel can reach Android's partitions, the iOS volume or the cryptexes. The
- * refusals are here, in the kernel (bsd/dev/redwood_ufs.c) and in UEFI's own driver, which gives
+ * refusals are here, in the kernel (bsd/dev/thyme_ufs.c) and in UEFI's own driver, which gives
  * out a partition's BlockIo and bounds it: a request has to pass all three.
  *
  * Each side writes its own cache lines only: the kernel the request, core 0 the answer (and the
@@ -2206,7 +2206,7 @@ charger_start(void)
 	static const efi_guid qcom_charger_guid = QCOM_CHARGER_GUID;
 	efi_status ex_status, qcom_status, init_status = 0;
 
-	if (charger_enabled || PLAT != &platform_redwood) {
+	if (charger_enabled || PLAT != &platform_thyme) {
 		return;
 	}
 	ex_status = BS->locate_protocol(&charger_ex_guid, NULL, (void **)&CHARGER_EX);
@@ -2472,7 +2472,7 @@ wdt_arm(void)
 {
 	uint64_t ctl = 0, since = 0;
 
-	if (PLAT != &platform_redwood) {
+	if (PLAT != &platform_thyme) {
 		return; /* SMC is not routed anywhere useful on QEMU virt */
 	}
 	uint64_t st = smc_call(VIRT_WDT_STATUS, 0, 0, &ctl, &since);
@@ -2882,9 +2882,9 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
 	uint64_t this_mpidr = READ_SYSREG(MPIDR_EL1) & 0xFFFFFF, kernel_mpidr = this_mpidr;
 	/* "cpus=N" or "cpumask=M" there too: the kernel may have more cores than the one it starts on */
 	int more_cores = 0, battery_requested = 0, ufs_requested = 0;
-	/* "torch=N" (not 0) there too: the phone's flashlight is the kernel's (bsd/dev/redwood_torch.c) */
+	/* "torch=N" (not 0) there too: the phone's flashlight is the kernel's (bsd/dev/thyme_torch.c) */
 	int torch_requested = 0;
-	/* "cam=5" there too: the phone's wide camera is iOS's (bsd/dev/redwood_camera.c) */
+	/* "cam=5" there too: the phone's wide camera is iOS's (bsd/dev/thyme_camera.c) */
 	int camera_requested = 0;
 	/* (the loader stays for run after run: what the last run's arguments said must not hold for this one) */
 	gamut_p3 = 0;
@@ -4188,7 +4188,7 @@ efi_main(efi_handle image, efi_system_table *st)
 			/* An unknown display is still a Qualcomm phone, not QEMU ramfb: kona and yupik
 			 * share the platform constants, only the framebuffer base differs. */
 			static struct platform plat_unknown;
-			plat_unknown = platform_redwood;
+			plat_unknown = platform_thyme;
 			plat_unknown.name = "unknown-kona";
 			plat_unknown.fb_base = SCREEN.base;
 			PLAT = &plat_unknown;

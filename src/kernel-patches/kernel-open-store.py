@@ -5,7 +5,7 @@ writable by root alone. Open them to that job; the driver still refuses every wr
 darwin past what the build put there, and the sysctl handlers still check the claim."""
 import sys
 
-p = "/opt/hackios/xnu-src/xnu-8796.121.2/bsd/dev/redwood_ufs.c"
+p = "/opt/hackios/xnu-src/xnu-8796.121.2/bsd/dev/thyme_ufs.c"
 s = open(p).read()
 
 subs = [
@@ -13,8 +13,8 @@ subs = [
     ('(void)devfs_make_node(makedev(ufs_cmajor, i), DEVFS_CHAR, UID_ROOT, GID_OPERATOR, 0640, "%s", name);',
      '(void)devfs_make_node(makedev(ufs_cmajor, i), DEVFS_CHAR, UID_ROOT, GID_OPERATOR, 0666, "%s", name);'),
     # the handshake sysctl the saver writes
-    ('SYSCTL_PROC(_kern_redwood, OID_AUTO, var_save, CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_LOCKED, NULL, 0,',
-     'SYSCTL_PROC(_kern_redwood, OID_AUTO, var_save, CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_LOCKED | CTLFLAG_ANYBODY, NULL, 0,'),
+    ('SYSCTL_PROC(_kern_thyme, OID_AUTO, var_save, CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_LOCKED, NULL, 0,',
+     'SYSCTL_PROC(_kern_thyme, OID_AUTO, var_save, CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_LOCKED | CTLFLAG_ANYBODY, NULL, 0,'),
 ]
 for old, new in subs:
     if old not in s:
@@ -25,7 +25,7 @@ for old, new in subs:
 
 # the claim sysctl
 import re
-m = re.search(r'SYSCTL_INT\(_kern_redwood, OID_AUTO, var_busy,[^;]*;', s)
+m = re.search(r'SYSCTL_INT\(_kern_thyme, OID_AUTO, var_busy,[^;]*;', s)
 if m:
     old = m.group(0)
     if "CTLFLAG_ANYBODY" not in old:
@@ -34,7 +34,7 @@ if m:
         print("patched: var_busy ->", new[:90])
 else:
     # a PROC handler maybe
-    m2 = re.search(r'SYSCTL_PROC\(_kern_redwood, OID_AUTO, var_busy,[^;]*;', s)
+    m2 = re.search(r'SYSCTL_PROC\(_kern_thyme, OID_AUTO, var_busy,[^;]*;', s)
     if m2:
         old = m2.group(0)
         if "CTLFLAG_ANYBODY" not in old:

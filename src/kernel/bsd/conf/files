@@ -109,37 +109,37 @@ bsd/dev/munge.c 			optional config_requires_u32_munging
 bsd/dev/unix_startup.c			standard
 
 bsd/dev/monotonic.c optional monotonic
-bsd/dev/redwood_input.c		standard
-bsd/dev/redwood_virtio_input.c	standard
-bsd/dev/redwood_goodix.c	standard
-bsd/dev/redwood_buttons.c	standard
-bsd/dev/redwood_battery.c	standard
-bsd/dev/redwood_ufs.c	standard
-bsd/dev/redwood_ufshc.c	standard
-bsd/dev/redwood_net.c		standard
-bsd/dev/redwood_virtio_net.c	standard
-bsd/dev/redwood_apple80211.c	standard
-bsd/dev/redwood_cpufreq.c	standard
-bsd/dev/redwood_adreno.c	standard
-bsd/dev/redwood_audio.c		standard
-bsd/dev/redwood_virtio_sound.c	standard
-bsd/dev/redwood_speaker.c	standard
-bsd/dev/redwood_guard.c		standard
-bsd/dev/redwood_haptic.c		standard
-bsd/dev/redwood_torch.c		standard
-bsd/dev/redwood_camera.c	standard
-bsd/dev/redwood_mic.c		standard
-bsd/dev/redwood_wifi.c		standard
-bsd/dev/redwood_adsp.c		standard
-bsd/dev/redwood_image.c		standard
-bsd/dev/redwood_virtio_blk.c	standard
-bsd/dev/redwood_sparse.c	standard
-bsd/dev/redwood_apfs_check.c	optional apfs
-bsd/dev/redwood_sound.c		standard
-bsd/dev/redwood_qmi.c		standard
-bsd/dev/redwood_wlfw.c		standard
-bsd/dev/redwood_lx.c		standard
-bsd/dev/redwood_sta.c		standard
+bsd/dev/thyme_input.c		standard
+bsd/dev/thyme_virtio_input.c	standard
+bsd/dev/thyme_goodix.c	standard
+bsd/dev/thyme_buttons.c	standard
+bsd/dev/thyme_battery.c	standard
+bsd/dev/thyme_ufs.c	standard
+bsd/dev/thyme_ufshc.c	standard
+bsd/dev/thyme_net.c		standard
+bsd/dev/thyme_virtio_net.c	standard
+bsd/dev/thyme_apple80211.c	standard
+bsd/dev/thyme_cpufreq.c	standard
+bsd/dev/thyme_adreno.c	standard
+bsd/dev/thyme_audio.c		standard
+bsd/dev/thyme_virtio_sound.c	standard
+bsd/dev/thyme_speaker.c	standard
+bsd/dev/thyme_guard.c		standard
+bsd/dev/thyme_haptic.c		standard
+bsd/dev/thyme_torch.c		standard
+bsd/dev/thyme_camera.c	standard
+bsd/dev/thyme_mic.c		standard
+bsd/dev/thyme_wifi.c		standard
+bsd/dev/thyme_adsp.c		standard
+bsd/dev/thyme_image.c		standard
+bsd/dev/thyme_virtio_blk.c	standard
+bsd/dev/thyme_sparse.c	standard
+bsd/dev/thyme_apfs_check.c	optional apfs
+bsd/dev/thyme_sound.c		standard
+bsd/dev/thyme_qmi.c		standard
+bsd/dev/thyme_wlfw.c		standard
+bsd/dev/thyme_lx.c		standard
+bsd/dev/thyme_sta.c		standard
 bsd/dev/dev_perfmon.c optional config_perfmon
 
 bsd/libkern/crc32.c			standard
@@ -647,11 +647,11 @@ bsd/dev/fts_port/ftsIO.c	standard
 bsd/dev/fts_port/fts_glue.c	standard
 bsd/dev/fts_port/fts_platform.c	standard
 bsd/dev/fts_port/fts_touch.c	standard
-bsd/dev/redwood_st_touch.c	standard
-bsd/dev/redwood_st_touch_boost.c	standard
-bsd/dev/redwood_display.c	standard
-bsd/dev/redwood_board.c	standard
-bsd/dev/redwood_wifi_umi.c	standard
+bsd/dev/thyme_st_touch.c	standard
+bsd/dev/thyme_st_touch_boost.c	standard
+bsd/dev/thyme_display.c	standard
+bsd/dev/thyme_board.c	standard
+bsd/dev/thyme_wifi_umi.c	standard
 bsd/dev/umi_mhi.c	standard
 bsd/dev/umi_pcie.c	standard
 bsd/dev/umi_rpmh.c	standard

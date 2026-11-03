@@ -2,7 +2,7 @@
 """Point the kernel's UFS write store at our partition geometry."""
 import sys
 
-p = "/opt/hackios/xnu-src/xnu-8796.121.2/bsd/dev/redwood_ufs.c"
+p = "/opt/hackios/xnu-src/xnu-8796.121.2/bsd/dev/thyme_ufs.c"
 s = open(p).read()
 subs = [
     ("#define UFS_WRITE_FIRST    2042368ULL                  /* darwin's blocks of 4096 */",

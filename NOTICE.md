@@ -27,7 +27,7 @@ Two licences apply, the same split the base HakiOS project uses (see `LICENSE`):
 
 ## Third-party code carried in `src/kernel/`
 
-* `bsd/dev/redwood_lx.c`, `redwood_wifi*.c`, `redwood_qmi.c`, `umi_*` — the Wi-Fi glue sits between
+* `bsd/dev/thyme_lx.c`, `thyme_wifi*.c`, `thyme_qmi.c`, `umi_*` — the Wi-Fi glue sits between
   the kernel and code derived from Linux (`ath11k`, LinuxKPI; **GPL-2.0**) and from the FreeBSD
   net80211 layer. Keep those licences in mind if you redistribute these files; the upstream Linux
   sources are not carried here.
@@ -39,17 +39,30 @@ Two licences apply, the same split the base HakiOS project uses (see `LICENSE`):
 
 * Base port: **DBC1349/hackios-mi10ultra** — XNU port, UEFI/Silicium setup, loader, drivers,
   userland build. The port builds on it directly.
+* **Mainline HakiOS — [oosexgang/hakios-xnu-kernel](https://github.com/oosexgang/hakios-xnu-kernel)**:
+  the project HakiOS has grown into — drivers by subsystem (`drivers/`), the Metal-based
+  CoreAnimation work, the 120 Hz animation research, the UEFI and device packages, and the
+  documentation this port's own docs follow where they apply. This port is based on the original
+  HackiOS/Mi 10 Ultra tree and follows the mainline's direction for the parts still open (Metal,
+  refresh rate, driver structure).
 * **Reference implementation — [azzlantern/hackios-thyme](https://github.com/azzlantern/hackios-thyme)**:
   the driver approach followed it. Its QCA6390 Wi-Fi bring-up (PCIe → MHI → QRTR → QMI/WLFW →
   ath11k on FreeBSD LinuxKPI, with the project's own `umi_*` glue and `lx_*` layer) and its
   boot/storage workflow were read, audited for anything unexpected (exec, sockets, file writes),
-  and then adapted to this device with the port's own `redwood_*` naming. No file from that
+  and then adapted to this device with the port's own `thyme_*` naming. No file from that
   repository is redistributed here — and neither are Apple's or the vendor's binaries from it.
 * XNU: Apple, APSL 2.0.
 * Mesa (freedreno FD650), Linux ath11k / LinuxKPI, FreeBSD net80211: used by the port's kernel with
   their own licenses.
 * UEFI firmware: Project Silicium / Mu-Silicium (BSD-2-Clause-Patent), plus vendor drivers from the
   phone's own XBL.
+
+## Naming
+
+The port's own names are `thyme_*` (the phone's codename): driver files, functions, the
+`/thyme` volume, the `kern.thyme.*` sysctls. The base projects used the POCO X5 Pro's codename
+(`redwood`) for the same files; those were renamed here, so a tree built from this repository uses
+`thyme_*` everywhere.
 
 ## The stub-AMFI and code signing
 
